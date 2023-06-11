@@ -58,10 +58,6 @@
 		return response.text;
 	}
 
-
-
-
-	
 	async function reviewCoverLetter(letter) {
 		const prompt = ChatPromptTemplate.fromPromptMessages([
 			HumanMessagePromptTemplate.fromTemplate(
@@ -130,6 +126,7 @@
 			alert("Please fill out all fields.");
 		} else {
 			// Handle form submission logic here
+			console.log(resume);
 			navigate("/loading1");
 			generateCoverLetter().then((letter) => reviewCoverLetter(letter));
 		}
@@ -143,15 +140,18 @@
 <div class="w-screen h-screen flex flex-col gap-4 items-center justify-center">
 	<form on:submit={handleSubmit} class="p-6 bg-gray-100 shadow-md rounded-md">
 		<div class="mb-4">
-			<h2 class="text-xl font-bold mb-2">Multiple Choice Field</h2>
-			<p class="text-sm text-gray-600 mb-2">Select an option from below:</p>
+			<h2 class="text-xl font-bold mb-2">Style</h2>
+			<p class="text-sm text-gray-600 mb-2">
+				Choose from a number of default writting styles, or imitate your own by
+				pasting in a past cover letter
+			</p>
 			<div class="mb-2">
 				<button
 					type="button"
 					class="w-full px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
 					on:click={toggleInputType}
 				>
-					{isTextbox ? "Switch to select" : "Switch to text input"}
+					{isTextbox ? "Default Styles" : "Select Writting Sample"}
 				</button>
 			</div>
 			{#if !isTextbox}
@@ -169,6 +169,7 @@
 			{:else}
 				<textarea
 					bind:value={writtingSample}
+					placeholder="Paste your writting sample here"
 					rows="3"
 					cols="50"
 					class="w-full p-2 border border-gray-300 rounded"
@@ -177,8 +178,7 @@
 		</div>
 
 		<div class="mb-4">
-			<h2 class="text-xl font-bold mb-2">PDF Upload</h2>
-			<p class="text-sm text-gray-600 mb-2">Select a PDF file to upload:</p>
+			<h2 class="text-xl font-bold mb-2">Resume</h2>
 			<input
 				type="file"
 				accept=".pdf"
@@ -188,10 +188,10 @@
 		</div>
 
 		<div class="mb-4">
-			<h2 class="text-xl font-bold mb-2">Text Section 1</h2>
-			<p class="text-sm text-gray-600 mb-2">Paste your text here:</p>
+			<h2 class="text-xl font-bold mb-2">Job Description</h2>
 			<textarea
 				bind:value={jobDescription}
+				placeholder="Paste the job description here"
 				rows="3"
 				cols="50"
 				class="w-full p-2 border border-gray-300 rounded"
@@ -199,10 +199,10 @@
 		</div>
 
 		<div class="mb-4">
-			<h2 class="text-xl font-bold mb-2">Text Section 2</h2>
-			<p class="text-sm text-gray-600 mb-2">Paste more text here:</p>
+			<h2 class="text-xl font-bold mb-2">Additional Notes</h2>
 			<textarea
 				bind:value={additionalNotes}
+				placeholder="e.g. Highlight my data science skills and interest in public policy"
 				rows="3"
 				cols="50"
 				class="w-full p-2 border border-gray-300 rounded"
