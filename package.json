@@ -25,6 +25,9 @@
   },
   "dependencies": {
     "firebase": "^9.22.2",
+    "html2canvas": "^1.4.1",
+    "html2pdf.js": "^0.10.1",
+    "jspdf": "^2.5.1",
     "langchain": "^0.0.92",
     "pnpm": "^8.6.1"
   }
