@@ -1,15 +1,15 @@
 <script>
-	import { onMount } from "svelte";
-	import { ref, set, onValue } from "firebase/database";
-	import { database, auth } from "../plugins/firebase/firebase.ts";
 	import { coverLetter } from "$/stores/coverLetter";
-	import { navigate } from "svelte-navigator";
+	import { onValue, ref, set } from "firebase/database";
 	import { LLMChain } from "langchain/chains";
 	import { ChatOpenAI } from "langchain/chat_models/openai";
 	import {
 		ChatPromptTemplate,
 		HumanMessagePromptTemplate,
 	} from "langchain/prompts";
+	import { onMount } from "svelte";
+	import { navigate } from "svelte-navigator";
+	import { auth, database } from "../plugins/firebase/firebase";
 
 	let default_style;
 	let style;
@@ -20,11 +20,13 @@
 	let writtingSample = "";
 	let isTextbox = false;
 	const userID = auth.currentUser.uid;
+	const name = auth.currentUser.displayName;
 
 	const handleSubmit = async (event) => {
 		event.preventDefault();
 		if (
-			(!default_style && writtingSample.trim() === "") ||
+			(!isTextbox && !default_style) ||
+			(isTextbox && writtingSample.trim() === "") ||
 			!resume ||
 			jobDescription.trim() === ""
 		) {
@@ -50,10 +52,8 @@
 		onValue(
 			ref(database, "/users/" + userID),
 			(snapshot) => {
-				name =
-					(snapshot.val() && snapshot.val().name) ||
-					auth.currentUser.displayName;
 				resume = snapshot.val() && snapshot.val().resume;
+				resumeFileName = snapshot.val() && snapshot.val().resumeFileName;
 				additionalNotes =
 					(snapshot.val() && snapshot.val().additionalNotes) || "";
 				default_style = snapshot.val() && snapshot.val().default_style;
@@ -72,6 +72,7 @@
 			name: name,
 			userID: userID,
 			resume: resume,
+			resumeFileName: resumeFileName,
 			additionalNotes: additionalNotes,
 			default_style: default_style,
 			writtingSample: writtingSample,
@@ -169,6 +170,7 @@
 
 	const handleFileChange = async (event) => {
 		resume = event.target.files[0];
+		resumeFileName = event.target.files[0].name;
 	};
 
 	const toggleInputType = () => {
@@ -177,12 +179,6 @@
 </script>
 
 <div class="w-screen h-screen flex flex-col gap-4 items-center justify-center">
-	<script
-		src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"
-		integrity="sha512-ml/QKfG3+Yes6TwOzQb7aCNtJF4PUyha6R3w8pSTo/VJSywl7ZreYvvtUso7fKevpsI+pYVVwnu82YO0q3V6eg=="
-		crossorigin="anonymous"
-		referrerpolicy="no-referrer"
-	></script>
 	<form on:submit={handleSubmit} class="p-6 bg-gray-100 shadow-md rounded-md">
 		<div class="mb-4">
 			<h2 class="text-xl font-bold mb-2">Style</h2>
@@ -224,12 +220,26 @@
 
 		<div class="mb-4">
 			<h2 class="text-xl font-bold mb-2">Resume</h2>
-			<input
-				type="file"
-				accept=".pdf"
-				on:change={handleFileChange}
-				class="w-full p-2 border border-gray-300 rounded"
-			/>
+			<div class="flex items-center">
+				<div class="relative">
+					<input
+						id="resume-upload"
+						class="absolute inset-0 w-full h-full cursor-pointer opacity-0"
+						type="file"
+						accept=".pdf"
+						on:change={handleFileChange}
+					/>
+					<button
+						type="button"
+						class="px-4 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400 cursor-pointer"
+					>
+						Upload PDF
+					</button>
+				</div>
+				<div class="ml-4 text-gray-600 text-sm">
+					{resumeFileName || ""}
+				</div>
+			</div>
 		</div>
 
 		<div class="mb-4">
