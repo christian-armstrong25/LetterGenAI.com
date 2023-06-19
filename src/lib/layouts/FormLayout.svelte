@@ -71,7 +71,6 @@
 	function writeUserData() {
 		set(ref(database, "users/" + userID), {
 			name: name,
-			userID: userID,
 			additionalNotes: additionalNotes,
 			default_style: default_style,
 			writtingSample: writtingSample,
