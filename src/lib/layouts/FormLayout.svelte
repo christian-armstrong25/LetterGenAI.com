@@ -7,6 +7,7 @@
 		ChatPromptTemplate,
 		HumanMessagePromptTemplate,
 	} from "langchain/prompts";
+	import * as pdfjsLib from "pdfjs-dist/build/pdf";
 	import { onMount } from "svelte";
 	import { navigate } from "svelte-navigator";
 	import { auth, database } from "../plugins/firebase/firebase";
@@ -71,12 +72,12 @@
 		set(ref(database, "users/" + userID), {
 			name: name,
 			userID: userID,
-			resume: resume,
-			resumeFileName: resumeFileName,
 			additionalNotes: additionalNotes,
 			default_style: default_style,
 			writtingSample: writtingSample,
 			isTextbox: isTextbox,
+			resume: resume,
+			resumeFileName: resumeFileName,
 		});
 	}
 
@@ -168,10 +169,33 @@
 		}
 	}
 
-	const handleFileChange = async (event) => {
-		resume = event.target.files[0];
-		resumeFileName = event.target.files[0].name;
-	};
+	async function handleFileChange(event) {
+		const file = event.target.files[0];
+		resumeFileName = file.name;
+
+		pdfjsLib.GlobalWorkerOptions.workerSrc =
+			"//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.7.107/pdf.worker.js";
+
+		const reader = new FileReader();
+		reader.onload = async function () {
+			if (reader.result instanceof ArrayBuffer) {
+				const typedarray = new Uint8Array(reader.result);
+				const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+				let textContent = "";
+				for (let i = 1; i <= pdf.numPages; i++) {
+					const page = await pdf.getPage(i);
+					const content = await page.getTextContent();
+					for (const item of content.items) {
+						if (typeof item.str === "string") {
+							textContent += item.str;
+						}
+					}
+				}
+				resume = textContent;
+			}
+		};
+		reader.readAsArrayBuffer(file);
+	}
 
 	const toggleInputType = () => {
 		isTextbox = !isTextbox;
@@ -221,21 +245,19 @@
 		<div class="mb-4">
 			<h2 class="text-xl font-bold mb-2">Resume</h2>
 			<div class="flex items-center">
-				<div class="relative">
+				<label
+					for="resume-upload"
+					class="relative inline-block cursor-pointer bg-blue-500 text-white px-4 py-1 rounded transition-colors duration-200 ease-in-out hover:bg-blue-600"
+				>
+					Upload PDF
 					<input
 						id="resume-upload"
-						class="absolute inset-0 w-full h-full cursor-pointer opacity-0"
+						class="absolute top-0 left-0 w-0 h-0 overflow-hidden opacity-0"
 						type="file"
 						accept=".pdf"
 						on:change={handleFileChange}
 					/>
-					<button
-						type="button"
-						class="px-4 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400 cursor-pointer"
-					>
-						Upload PDF
-					</button>
-				</div>
+				</label>
 				<div class="ml-4 text-gray-600 text-sm">
 					{resumeFileName || ""}
 				</div>
