@@ -46,13 +46,13 @@
 					<Link
 						on:click={() => coverLetter.set("")}
 						to="/form"
-						class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+						class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none"
 					>
 						Generate New Letter
 					</Link>
 					<button
 						on:click={exportPdf}
-						class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+						class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none"
 					>
 						Export to PDF
 					</button>
@@ -61,3 +61,4 @@
 		</div>
 	</div>
 </div>
+
