@@ -13,7 +13,10 @@
 	function exportPdf() {
 		// Create a new HTML element with the coverLetterValue
 		const element = document.createElement("div");
-		element.innerHTML = `<div style="font-family: 'Times New Roman', sans-serif; font-size: 14pt; color: black; padding: 72pt; line-height: 1.5;">${coverLetterValue}</div>`;
+		element.innerHTML = `<div style="font-family: 'Times New Roman', sans-serif; font-size: 14pt; color: black; padding: 72pt; line-height: 1.5;">${coverLetterValue.replace(
+			/\n/g,
+			"<br>"
+		)}</div>`;
 
 		html2pdf()
 			.set({ html2canvas: { scale: 4 } })
@@ -22,7 +25,8 @@
 	}
 
 	function updateCoverLetter() {
-		coverLetter.set(editableDiv.textContent);
+		const content = editableDiv.innerHTML.replace(/<br>/g, "\n");
+		coverLetter.set(content);
 	}
 </script>
 
@@ -35,11 +39,12 @@
 			<div
 				class="text-black text-xs font-serif m-6 leading-relaxed p-6"
 				contenteditable
-				bind:this={editableDiv}
+				bind:innerHTML={editableDiv}
 				on:blur={updateCoverLetter}
 			>
-				{coverLetterValue}
+				{@html coverLetterValue.replace(/\n/g, "<br>")}
 			</div>
+
 			<slot />
 			<div class="flex justify-center mt-3">
 				<div class="inline-flex space-x-4">
@@ -61,4 +66,3 @@
 		</div>
 	</div>
 </div>
-

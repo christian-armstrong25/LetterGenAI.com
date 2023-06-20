@@ -90,7 +90,8 @@
 				Please write the cover letter based on the outline, drawing on the resume. ‘{style}’ \n\
 				Please remove the text above the greeting. \n\
 				Please replace [Recipient's Name] with Hiring Manager.\n\
-				{additionalNotes}"
+				{additionalNotes}. \n\
+				There should be a new line between each paragraph, the greeting should say 'Dear Hiring Manager,', and the sign off should say 'Sincerely, \n {name}'"
 			),
 		]);
 
@@ -109,6 +110,7 @@
 			jobDescription: jobDescription,
 			style: style,
 			additionalNotes: additionalNotes,
+			name: name,
 		});
 
 		return response.text;
@@ -117,7 +119,7 @@
 	async function reviewCoverLetter(letter) {
 		const prompt = ChatPromptTemplate.fromPromptMessages([
 			HumanMessagePromptTemplate.fromTemplate(
-				"You are a career advisor helping students write cover letters. You know that the great cover letters are simultaneously personal, show genuine enthusiasm, and professional. A student gives you the following cover letter: '{letter}' Edit it to be more personal, more genuinely enthusiastic and human, but not unprofessional or informal."
+				"You are a career advisor helping students write cover letters. You know that the great cover letters are simultaneously personal, show genuine enthusiasm, and are professional. A student gives you the following cover letter: '{letter}' Edit it to be more personal, more genuinely enthusiastic and human, but not unprofessional or informal. Here is the job description it is based on '{jobDescription}' and here is the resume: '{resume}'"
 			),
 		]);
 
@@ -137,6 +139,8 @@
 		const response = await chain.call(
 			{
 				letter: letter,
+				jobDescription: jobDescription,
+				resume: resume,
 			},
 			[
 				{
