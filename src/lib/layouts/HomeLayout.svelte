@@ -133,7 +133,7 @@
 		</h2>
 
 		<button
-			class="bg-blue-500 hover:bg-blue-600 focus:outline-none font-lg text-white rounded-md h-9 px-4 py-2.5 text-sm inline-flex items-center"
+			class="bg-blue-500 hover:bg-blue-600 focus:outline-none font-lg text-white rounded-md h-9 px-4 py-2-5 text-sm inline-flex items-center"
 			on:click={() => (showModal = true)}
 		>
 			Generate Cover Letter
@@ -261,3 +261,120 @@
 		</div>
 	</div>
 {/if}
+
+<style>
+	.bg-gray-100 {
+		background-color: #f7fafc;
+	}
+
+	.text-gray-800 {
+		color: #2d3748;
+	}
+
+	.text-gray-600 {
+		color: #4a5568;
+	}
+
+	.bg-blue-500 {
+		background-color: #4299e1;
+	}
+
+	.hover\:bg-blue-600:hover {
+		background-color: #3182ce;
+	}
+
+	.text-white {
+		color: #fff;
+	}
+
+	.rounded-md {
+		border-radius: 0.375rem;
+	}
+
+	.inline-flex {
+		display: inline-flex;
+	}
+
+	.items-center {
+		align-items: center;
+	}
+
+	.justify-center {
+		justify-content: center;
+	}
+
+	.flex-col {
+		flex-direction: column;
+	}
+
+	.flex {
+		display: flex;
+	}
+
+	.w-screen {
+		width: 100vw;
+	}
+
+	.h-screen {
+		height: 100vh;
+	}
+
+	.text-6xl {
+		font-size: 4rem;
+	}
+
+	.font-black {
+		font-weight: 900;
+	}
+
+	.text-center {
+		text-align: center;
+	}
+
+	.h-1 {
+		height: 1px;
+	}
+
+	.block {
+		display: block;
+	}
+
+	.text-xl {
+		font-size: 1.25rem;
+	}
+
+	.font-medium {
+		font-weight: 500;
+	}
+
+	.mb-6 {
+		margin-bottom: 1.5rem;
+	}
+
+	.px-5 {
+		padding-left: 1.25rem;
+		padding-right: 1.25rem;
+	}
+
+	.font-lg {
+		font-size: 1.125rem;
+	}
+
+	.h-9 {
+		height: 2.25rem;
+	}
+
+	.px-4 {
+		padding-left: 1rem;
+		padding-right: 1rem;
+	}
+
+	.py-2-5 {
+		padding-top: 0.625rem;
+		padding-bottom: 0.625rem;
+	}
+
+	.text-sm {
+		font-size: 0.875rem;
+	}
+</style>

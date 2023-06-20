@@ -88,10 +88,9 @@
 				Here is a job description: ‘{jobDescription}’ \n\
 				Please develop a bullet point outline for a cover letter based on the resume and job description provided. \n\
 				Please write the cover letter based on the outline, drawing on the resume. ‘{style}’ \n\
-				Please remove the text above the greeting. \n\
-				Please replace [Recipient's Name] with Hiring Manager.\n\
-				{additionalNotes}. \n\
-				There should be a new line between each paragraph, the greeting should say 'Dear Hiring Manager,', and the sign off should say 'Sincerely, \n {name}'"
+				Emphasize how I would contribute to the role based on the experiences on the resume. \n\
+				There should be a new line between each paragraph, the greeting should say 'Dear Hiring Manager,', and the sign off should say 'Sincerely, \n {name}' \n\
+				{additionalNotes}."
 			),
 		]);
 
@@ -119,7 +118,7 @@
 	async function reviewCoverLetter(letter) {
 		const prompt = ChatPromptTemplate.fromPromptMessages([
 			HumanMessagePromptTemplate.fromTemplate(
-				"You are a career advisor helping students write cover letters. You know that the great cover letters are simultaneously personal, show genuine enthusiasm, and are professional. A student gives you the following cover letter: '{letter}' Edit it to be more personal, more genuinely enthusiastic and human, but not unprofessional or informal. Here is the job description it is based on '{jobDescription}' and here is the resume: '{resume}'"
+				"You are a career advisor helping students write cover letters. You know that the great cover letters are simultaneously personal, show genuine enthusiasm, and are professional. A student gives you the following cover letter: '{letter}' Edit it to be more personal, more genuinely enthusiastic and human, but not unprofessional or informal. Here is the job description it is based on '{jobDescription}' and here is their resume: '{resume}'"
 			),
 		]);
 
@@ -155,19 +154,19 @@
 	function setStyle() {
 		switch (default_style) {
 			case "Very Formal":
-				style = "Make it sound very formal";
+				style = "I want to come accross as sounding very formal";
 				break;
 			case "Enthusiastic and Passionate":
-				style = "Make it sound enthusiastic and passionate";
+				style = "I want to come accross as enthusiastic and passionate";
 				break;
 			case "Narrative-Oriented":
-				style = "Make it sound narrative-oriented";
+				style = "I want it to sound narrative-oriented";
 				break;
 			case "Visionary":
-				style = "Make it sound visionary";
+				style = "I want to come accross as a visionary";
 				break;
 			case "Precise and Qualification-Driven":
-				style = "Make it sound precise and qualification driven";
+				style = "I want you to emphasize my qualification with precise figures";
 				break;
 		}
 	}
