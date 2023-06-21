@@ -10,10 +10,10 @@
 	import { onAuthStateChanged } from "firebase/auth";
 	import { onMount } from "svelte";
 	import { Route, Router } from "svelte-navigator";
-	import FormLayout from "./lib/layouts/FormLayout.svelte";
-	import HomeLayout from "./lib/layouts/HomeLayout.svelte";
-	import LetterLayout from "./lib/layouts/LetterLayout.svelte";
-	import LazyRoute from "./lib/router/LazyRoute.svelte";
+	import FormLayout from "./src/lib/layouts/FormLayout.svelte";
+	import HomeLayout from "./src/lib/layouts/HomeLayout.svelte";
+	import LetterLayout from "./src/lib/layouts/LetterLayout.svelte";
+	import LazyRoute from "./src/lib/router/LazyRoute.svelte";
 
 	let ready: boolean = false;
 

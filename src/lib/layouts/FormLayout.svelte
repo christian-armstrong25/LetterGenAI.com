@@ -89,7 +89,7 @@
 				Please develop a bullet point outline for a cover letter based on the resume and job description provided. \n\
 				Please write the cover letter based on the outline, drawing on the resume. ‘{style}’ \n\
 				Emphasize how I would contribute to the role based on the experiences on the resume. \n\
-				There should be a new line between each paragraph, the greeting should say 'Dear Hiring Manager,', and the sign off should say 'Sincerely, \n {name}' \n\
+				There should be a new line between each paragraph, the greeting should say 'Dear Hiring Manager,', and the sign off should say 'Sincerely, {name}' \n\
 				{additionalNotes}."
 			),
 		]);
