@@ -121,23 +121,32 @@
 	}
 </script>
 
-<div
-	class="w-screen h-screen flex flex-col gap-4 items-center justify-center bg-gray-100"
->
-	<div class="text-6xl font-black text-center text-gray-800">LetterGen.io</div>
-	<div class="w-[150px] h-1 bg-black block" />
-	<slot />
-	<div class="text-center px-5">
-		<h2 class="text-xl font-medium mb-6 text-gray-600">
-			Instant. Effortless. You.
-		</h2>
+<div class="w-screen h-screen flex gap-4 items-center bg-gray-100">
+	<div
+		class="flex-1 flex flex-col items-center justify-center text-center px-10"
+	>
+		<div class="text-8xl font-black text-gray-800">LetterGenAI</div>
+		<div class="w-[150px] h-1 bg-black block mx-auto my-4" />
+		<slot />
+		<div>
+			<h2 class="text-3xl font-medium mb-6 text-gray-600">
+				Never write a cover letter again
+			</h2>
 
-		<button
-			class="bg-blue-500 hover:bg-blue-600 focus:outline-none font-lg text-white rounded-md h-9 px-4 py-2-5 text-sm inline-flex items-center"
-			on:click={() => (showModal = true)}
-		>
-			Generate Cover Letter
-		</button>
+			<button
+				class="bg-blue-500 hover:bg-blue-600 focus:outline-none font-lg text-white rounded-md h-9 px-4 py-2-5 text-sm inline-flex items-center mx-auto"
+				on:click={() => (showModal = true)}
+			>
+				Generate Cover Letter
+			</button>
+		</div>
+	</div>
+	<div class="flex-1 flex items-center justify-center p-10">
+		<img
+			src="/../../public/coverletterGIF.gif"
+			alt="Your GIF"
+			class="max-h-[70%] max-w-[70%] object-cover"
+		/>
 	</div>
 </div>
 
