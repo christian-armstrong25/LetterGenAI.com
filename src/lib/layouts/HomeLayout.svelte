@@ -143,7 +143,7 @@
 	</div>
 	<div class="flex-1 flex items-center justify-center p-10">
 		<img
-			src="/public/coverletterGIF.gif"
+			src="coverletterGIF.gif"
 			alt="Your GIF"
 			class="max-h-[70%] max-w-[70%] object-cover"
 		/>
