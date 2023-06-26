@@ -81,7 +81,7 @@ Step 2: Matching Skills: Let's align {name}'s qualifications and achievements wi
 Step 3: Demonstrating Potential: What makes {name} a great candidate? Elaborate on how their past experiences will contribute to the company and role. Be explicit—how exactly do {name}'s skills and achievements meet the company's needs? Also, let's weave in aspects of {name}'s personality and motivations that make them a cultural fit for the company. \n\
 Step 4: Wrapping Up: We're almost there! Let's write a closing paragraph expressing gratitude for the reader's time, {name}'s eagerness to discuss further in an interview, and their excitement about the unique contributions they can make to the company. \n\
 Step 5: Signing Off: And finally, let's bid them adieu with a 'Sincerely, {name}'. \n\
-Remember, {name} prefers their letter to be written in a {style} style. It's a challenging task, but we have faith in your skills to create a cover letter that is professional, engaging, and truly encapsulates {name}'s personality and potential."
+Remember, {name} prefers their letter to be written in a {style} style. It's a challenging task, but we have faith in your skills to create a cover letter that is professional, engaging, and truly encapsulates {name}'s personality and potential. Notes: Do not label the steps you take, only show the end result, which should be a cover letter. {additionalNotes}"
 				),
 			]);
 		} else {
@@ -97,7 +97,7 @@ Step 2: Matching Skills: Let's align {name}'s qualifications and achievements wi
 Step 3: Demonstrating Potential: What makes {name} a great candidate? Elaborate on how their past experiences will contribute to the company and role. Be explicit—how exactly do {name}'s skills and achievements meet the company's needs? Also, let's weave in aspects of {name}'s personality and motivations that make them a cultural fit for the company. \n\
 Step 4: Wrapping Up: We're almost there! Let's write a closing paragraph expressing gratitude for the reader's time, {name}'s eagerness to discuss further in an interview, and their excitement about the unique contributions they can make to the company. \n\
 Step 5: Signing Off: And finally, let's bid them adieu with a 'Sincerely, {name}'. \n\
-Remember, {name} prefers their letter to be written in their own voice based on their writing sample. It's a challenging task, but we have faith in your skills to create a cover letter that is professional, engaging, and truly encapsulates {name}'s personality and potential."
+Remember, {name} prefers their letter to be written in their own voice based on their writing sample. It's a challenging task, but we have faith in your skills to create a cover letter that is professional, engaging, and truly encapsulates {name}'s personality and potential. Notes: Do not label the steps you take, only show the end result, which should be a cover letter. {additionalNotes}"
 				),
 			]);
 		}
@@ -121,6 +121,7 @@ Remember, {name} prefers their letter to be written in their own voice based on 
 				writingSample: writingSample,
 				style: style,
 				name: name,
+				additionalNotes: additionalNotes,
 			},
 			[
 				{
