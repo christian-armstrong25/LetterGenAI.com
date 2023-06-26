@@ -3,20 +3,21 @@
 	import { Link } from "svelte-navigator";
 	import { coverLetter } from "../stores/coverLetter";
 
-	let coverLetterValue;
+	let coverLetterValue = "";
 	let editableDiv;
 
 	coverLetter.subscribe((value) => {
-		coverLetterValue = value;
+		coverLetterValue = value
+			.replace(/\n/g, "<br>")
+			.replace(/^ +/gm, (match) => match.replace(/ /g, "&nbsp;"));
+		if (editableDiv) {
+			editableDiv.innerHTML = coverLetterValue;
+		}
 	});
 
 	function exportPdf() {
-		// Create a new HTML element with the coverLetterValue
 		const element = document.createElement("div");
-		element.innerHTML = `<div style="font-family: 'Times New Roman', sans-serif; font-size: 14pt; color: black; padding: 72pt; line-height: 1.5;">${coverLetterValue.replace(
-			/\n/g,
-			"<br>"
-		)}</div>`;
+		element.innerHTML = `<div style="font-family: 'Times New Roman', sans-serif; font-size: 14pt; color: black; padding: 72pt; line-height: 1.5;">${coverLetterValue}</div>`;
 
 		html2pdf()
 			.set({ html2canvas: { scale: 4 } })
@@ -25,7 +26,9 @@
 	}
 
 	function updateCoverLetter() {
-		const content = editableDiv.innerHTML.replace(/<br>/g, "\n");
+		const content = editableDiv.innerHTML
+			.replace(/<br>/g, "\n")
+			.replace(/&nbsp;/g, " ");
 		coverLetter.set(content);
 	}
 </script>
@@ -39,10 +42,10 @@
 			<div
 				class="text-black text-xs font-serif m-6 leading-relaxed p-6"
 				contenteditable
-				bind:innerHTML={editableDiv}
+				bind:this={editableDiv}
 				on:blur={updateCoverLetter}
 			>
-				{@html coverLetterValue.replace(/\n/g, "<br>")}
+				{@html coverLetterValue}
 			</div>
 
 			<slot />
