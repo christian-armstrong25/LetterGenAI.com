@@ -12,13 +12,12 @@
 	import { navigate } from "svelte-navigator";
 	import { auth, database } from "../plugins/firebase/firebase";
 
-	let default_style;
 	let style;
 	let resume;
 	let resumeFileName = "";
 	let jobDescription = "";
 	let additionalNotes = "";
-	let writtingSample = "";
+	let writingSample = "";
 	let isTextbox = false;
 	const userID = auth.currentUser.uid;
 	const name = auth.currentUser.displayName;
@@ -26,26 +25,15 @@
 	const handleSubmit = async (event) => {
 		event.preventDefault();
 		if (
-			(!isTextbox && !default_style) ||
-			(isTextbox && writtingSample.trim() === "") ||
+			(!isTextbox && !style) ||
+			(isTextbox && writingSample.trim() === "") ||
 			!resume ||
 			jobDescription.trim() === ""
 		) {
 			alert("Please fill out all fields.");
 		} else {
-			// Handle form submission logic here
-			if (!isTextbox) {
-				// handles style or writting sample
-				setStyle();
-			} else {
-				style =
-					"Copy the writting style and syntactic quirks of the following cover letter: " +
-					writtingSample;
-			}
-
-			navigate("/loading1");
-			generateCoverLetter().then((letter) => reviewCoverLetter(letter));
 			writeUserData();
+			generateCoverLetter();
 		}
 	};
 
@@ -57,9 +45,8 @@
 				resumeFileName = snapshot.val() && snapshot.val().resumeFileName;
 				additionalNotes =
 					(snapshot.val() && snapshot.val().additionalNotes) || "";
-				default_style = snapshot.val() && snapshot.val().default_style;
-				writtingSample =
-					(snapshot.val() && snapshot.val().writtingSample) || "";
+				style = snapshot.val() && snapshot.val().style;
+				writingSample = (snapshot.val() && snapshot.val().writingSample) || "";
 				isTextbox = (snapshot.val() && snapshot.val().isTextbox) || false;
 			},
 			{
@@ -72,8 +59,8 @@
 		set(ref(database, "users/" + userID), {
 			name: name,
 			additionalNotes: additionalNotes,
-			default_style: default_style,
-			writtingSample: writtingSample,
+			style: style,
+			writingSample: writingSample,
 			isTextbox: isTextbox,
 			resume: resume,
 			resumeFileName: resumeFileName,
@@ -81,50 +68,42 @@
 	}
 
 	async function generateCoverLetter() {
-		const prompt = ChatPromptTemplate.fromPromptMessages([
-			HumanMessagePromptTemplate.fromTemplate(
-				"A good cover letter shows sincere enthusiasm, is personal, relevant to the job description, and professional. \n\
-				Here is a resume: ‘{resume}’ \n\
-				Here is a job description: ‘{jobDescription}’ \n\
-				Please develop a bullet point outline for a cover letter based on the resume and job description provided. \n\
-				Please write the cover letter based on the outline, drawing on the resume. ‘{style}’ \n\
-				Emphasize how I would contribute to the role based on the experiences on the resume. \n\
-				There should be a new line between each paragraph, the greeting should say 'Dear Hiring Manager,', and the sign off should say 'Sincerely, {name}' \n\
-				{additionalNotes}."
-			),
-		]);
+		let prompt;
+		if (!isTextbox) {
+			// default styles
+			prompt = ChatPromptTemplate.fromPromptMessages([
+				HumanMessagePromptTemplate.fromTemplate(
+					"Welcome, Career Advisor! Today, we're pairing you with a student, {name}, who needs your expert touch to craft a stellar cover letter. This is more than just a task—it's a mission to present {name} as the ideal candidate for their dream role. We'll need to synthesize their resume, the job description, and their unique voice to tell a compelling story. Let's dive right in: \n\
+				Here is {name}'s resume: ‘’’{resume}’’’ \n\
+And the job description: ‘’’{jobDescription}’’’ \n\
+Step 1: Getting Personal: First impressions matter! Using {name}'s resume and job description as a guide, could you draft an engaging introduction that not only expresses their sincere interest in the role but also demonstrates their understanding of the company's mission, culture, or recent initiatives? \n\
+Step 2: Matching Skills: Let's align {name}'s qualifications and achievements with the job requirements. Highlight a project or experience where {name} used similar skills or faced similar challenges to what they'll encounter at the company. Be sure to provide quantifiable results to show the impact of their work. Also, let's emphasize how these experiences specifically prepare {name} for the role they are applying for. \n\
+Step 3: Demonstrating Potential: What makes {name} a great candidate? Elaborate on how their past experiences will contribute to the company and role. Be explicit—how exactly do {name}'s skills and achievements meet the company's needs? Also, let's weave in aspects of {name}'s personality and motivations that make them a cultural fit for the company. \n\
+Step 4: Wrapping Up: We're almost there! Let's write a closing paragraph expressing gratitude for the reader's time, {name}'s eagerness to discuss further in an interview, and their excitement about the unique contributions they can make to the company. \n\
+Step 5: Signing Off: And finally, let's bid them adieu with a 'Sincerely, {name}'. \n\
+Remember, {name} prefers their letter to be written in a {style} style. It's a challenging task, but we have faith in your skills to create a cover letter that is professional, engaging, and truly encapsulates {name}'s personality and potential."
+				),
+			]);
+		} else {
+			// writing sample
+			prompt = ChatPromptTemplate.fromPromptMessages([
+				HumanMessagePromptTemplate.fromTemplate(
+					"Welcome, Career Advisor! Today, we're pairing you with a student, {name}, who needs your expert touch to craft a stellar cover letter. This is more than just a task—it's a mission to present {name} as the ideal candidate for their dream role. We'll need to synthesize their resume, the job description, and their unique voice from a writing sample to tell a compelling story. Let's dive right in: \n\
+Here is {name}'s resume: ‘’’{resume}’’’ \n\
+Here is {name}’s writing sample: ‘’’{writingSample}’’’ \n\
+And the job description: ‘’’{jobDescription}’’’ \n\
+Step 1: Getting Personal: First impressions matter! Using {name}'s resume and job description as a guide, could you draft an engaging introduction that not only expresses their sincere interest in the role but also demonstrates their understanding of the company's mission, culture, or recent initiatives? \n\
+Step 2: Matching Skills: Let's align {name}'s qualifications and achievements with the job requirements. Highlight a project or experience where {name} used similar skills or faced similar challenges to what they'll encounter at the company. Be sure to provide quantifiable results to show the impact of their work. Also, let's emphasize how these experiences specifically prepare {name} for the role they are applying for. \n\
+Step 3: Demonstrating Potential: What makes {name} a great candidate? Elaborate on how their past experiences will contribute to the company and role. Be explicit—how exactly do {name}'s skills and achievements meet the company's needs? Also, let's weave in aspects of {name}'s personality and motivations that make them a cultural fit for the company. \n\
+Step 4: Wrapping Up: We're almost there! Let's write a closing paragraph expressing gratitude for the reader's time, {name}'s eagerness to discuss further in an interview, and their excitement about the unique contributions they can make to the company. \n\
+Step 5: Signing Off: And finally, let's bid them adieu with a 'Sincerely, {name}'. \n\
+Remember, {name} prefers their letter to be written in their own voice based on their writing sample. It's a challenging task, but we have faith in your skills to create a cover letter that is professional, engaging, and truly encapsulates {name}'s personality and potential."
+				),
+			]);
+		}
 
 		const model = new ChatOpenAI({
 			openAIApiKey: import.meta.env.VITE_OPEN_AI_API_KEY,
-			temperature: 0.1,
-		});
-
-		const chain = new LLMChain({
-			llm: model,
-			prompt: prompt,
-		});
-
-		const response = await chain.call({
-			resume: resume,
-			jobDescription: jobDescription,
-			style: style,
-			additionalNotes: additionalNotes,
-			name: name,
-		});
-
-		return response.text;
-	}
-
-	async function reviewCoverLetter(letter) {
-		const prompt = ChatPromptTemplate.fromPromptMessages([
-			HumanMessagePromptTemplate.fromTemplate(
-				"You are a career advisor helping students write cover letters. You know that the great cover letters are simultaneously personal, show genuine enthusiasm, and are professional. A student gives you the following cover letter: '{letter}' Edit it to be more personal, more genuinely enthusiastic and human, but not unprofessional or informal. Here is the job description it is based on '{jobDescription}' and here is their resume: '{resume}'"
-			),
-		]);
-
-		const model = new ChatOpenAI({
-			openAIApiKey: import.meta.env.VITE_OPEN_AI_API_KEY,
-			temperature: 0.1,
 			streaming: true,
 		});
 
@@ -137,9 +116,11 @@
 
 		const response = await chain.call(
 			{
-				letter: letter,
 				jobDescription: jobDescription,
 				resume: resume,
+				writingSample: writingSample,
+				style: style,
+				name: name,
 			},
 			[
 				{
@@ -149,26 +130,6 @@
 				},
 			]
 		);
-	}
-
-	function setStyle() {
-		switch (default_style) {
-			case "Very Formal":
-				style = "I want to come accross as sounding very formal";
-				break;
-			case "Enthusiastic and Passionate":
-				style = "I want to come accross as enthusiastic and passionate";
-				break;
-			case "Narrative-Oriented":
-				style = "I want it to sound narrative-oriented";
-				break;
-			case "Visionary":
-				style = "I want to come accross as a visionary";
-				break;
-			case "Precise and Qualification-Driven":
-				style = "I want you to emphasize my qualification with precise figures";
-				break;
-		}
 	}
 
 	async function handleFileChange(event) {
@@ -209,7 +170,7 @@
 		<div class="mb-4">
 			<h2 class="text-xl font-bold mb-2">Style</h2>
 			<p class="text-sm text-gray-600 mb-2">
-				Choose from a number of default writting styles, or imitate your own by
+				Choose from a number of default writing styles, or imitate your own by
 				pasting in a past cover letter
 			</p>
 			<div class="mb-2">
@@ -218,12 +179,12 @@
 					class="w-full px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
 					on:click={toggleInputType}
 				>
-					{isTextbox ? "Default Styles" : "Select Writting Sample"}
+					{isTextbox ? "Default Styles" : "Select Writing Sample"}
 				</button>
 			</div>
 			{#if !isTextbox}
 				<select
-					bind:value={default_style}
+					bind:value={style}
 					class="w-full p-2 border border-gray-300 rounded"
 				>
 					<option disabled selected value> -- select an option -- </option>
@@ -235,8 +196,8 @@
 				</select>
 			{:else}
 				<textarea
-					bind:value={writtingSample}
-					placeholder="Paste your writting sample here"
+					bind:value={writingSample}
+					placeholder="Paste your writing sample here"
 					rows="3"
 					cols="50"
 					class="w-full p-2 border border-gray-300 rounded"
