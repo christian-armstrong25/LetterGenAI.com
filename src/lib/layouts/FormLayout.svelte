@@ -33,6 +33,7 @@
 			alert("Please fill out all fields.");
 		} else {
 			writeUserData();
+			coverLetter.set("");
 			generateCoverLetter();
 		}
 	};
@@ -243,7 +244,7 @@ Remember, {name} prefers their letter to be written in their own voice based on 
 			<h2 class="text-xl font-bold mb-2">Additional Notes</h2>
 			<textarea
 				bind:value={additionalNotes}
-				placeholder="e.g. Highlight my data science skills and interest in public policy"
+				placeholder="e.g. Highlight my data science skills and interest in public policy. Mention that I how I know John from IT."
 				rows="3"
 				cols="50"
 				class="w-full p-2 border border-gray-300 rounded"
