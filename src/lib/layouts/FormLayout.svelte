@@ -1,4 +1,5 @@
 <script>
+	import { abortStoredController, storeController } from "$/stores/controller";
 	import { coverLetter } from "$/stores/coverLetter";
 	import { onValue, ref, set } from "firebase/database";
 	import { LLMChain } from "langchain/chains";
@@ -21,6 +22,7 @@
 	let isTextbox = false;
 	const userID = auth.currentUser.uid;
 	const name = auth.currentUser.displayName;
+	let controller;
 
 	const handleSubmit = async (event) => {
 		event.preventDefault();
@@ -39,6 +41,7 @@
 	};
 
 	onMount(() => {
+		abortStoredController();
 		onValue(
 			ref(database, "/users/" + userID),
 			(snapshot) => {
@@ -69,6 +72,8 @@
 	}
 
 	async function generateCoverLetter() {
+		const controller = new AbortController();
+		storeController(controller);
 		let prompt;
 		if (!isTextbox) {
 			// default styles
@@ -115,23 +120,32 @@ Remember, {name} prefers their letter to be written in their own voice based on 
 
 		navigate("/letter");
 
-		const response = await chain.call(
-			{
-				jobDescription: jobDescription,
-				resume: resume,
-				writingSample: writingSample,
-				style: style,
-				name: name,
-				additionalNotes: additionalNotes,
-			},
-			[
+		try {
+			await chain.call(
 				{
-					handleLLMNewToken(token) {
-						coverLetter.update((letter) => letter + token);
-					},
+					jobDescription: jobDescription,
+					resume: resume,
+					writingSample: writingSample,
+					style: style,
+					name: name,
+					additionalNotes: additionalNotes,
+					signal: controller.signal,
 				},
-			]
-		);
+				[
+					{
+						handleLLMNewToken(token) {
+							coverLetter.update((letter) => letter + token);
+						},
+					},
+				]
+			);
+		} catch (e) {
+			if (e.name === "AbortError") {
+				console.log("Request was aborted");
+			} else {
+				console.log(e);
+			}
+		}
 	}
 
 	async function handleFileChange(event) {
@@ -244,7 +258,7 @@ Remember, {name} prefers their letter to be written in their own voice based on 
 			<h2 class="text-xl font-bold mb-2">Additional Notes</h2>
 			<textarea
 				bind:value={additionalNotes}
-				placeholder="e.g. Highlight my data science skills and interest in public policy. Mention that I how I know John from IT."
+				placeholder="e.g. Highlight my data science skills and interest in public policy. Mention that I know John from IT."
 				rows="3"
 				cols="50"
 				class="w-full p-2 border border-gray-300 rounded"
