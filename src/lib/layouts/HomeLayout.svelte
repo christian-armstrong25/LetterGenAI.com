@@ -328,10 +328,6 @@
 		height: 100vh;
 	}
 
-	.text-6xl {
-		font-size: 4rem;
-	}
-
 	.font-black {
 		font-weight: 900;
 	}
@@ -348,21 +344,12 @@
 		display: block;
 	}
 
-	.text-xl {
-		font-size: 1.25rem;
-	}
-
 	.font-medium {
 		font-weight: 500;
 	}
 
 	.mb-6 {
 		margin-bottom: 1.5rem;
-	}
-
-	.px-5 {
-		padding-left: 1.25rem;
-		padding-right: 1.25rem;
 	}
 
 	.font-lg {
