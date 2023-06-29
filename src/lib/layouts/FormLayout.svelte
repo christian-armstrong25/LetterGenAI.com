@@ -72,6 +72,7 @@
 			resume: resume,
 			resumeFileName: resumeFileName,
 			writingSampleFileName: writingSampleFileName,
+			jobDescription: jobDescription,
 		});
 	}
 
