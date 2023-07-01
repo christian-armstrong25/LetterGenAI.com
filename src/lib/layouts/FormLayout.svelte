@@ -261,9 +261,10 @@ Remember, {name} prefers their letter to be written in a {style} style. It's a c
 						class="absolute top-0 left-0 w-0 h-0 overflow-hidden opacity-0"
 						type="file"
 						accept=".pdf"
-						on:change={handleFileChange}
+						on:change={(e) => handleFileChange(e, "resume")}
 					/>
 				</label>
+
 				<div class="ml-4 text-gray-600 text-sm">
 					{resumeFileName || ""}
 				</div>
