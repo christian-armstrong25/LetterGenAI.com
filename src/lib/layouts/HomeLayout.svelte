@@ -1,376 +1,243 @@
-<script lang="ts">
-	import {
-		emailSignin,
-		emailSignup,
-		googleSignin,
-	} from "$plugins/firebase/auth.firebase";
-	import { user } from "$stores/user";
-	import { navigate } from "svelte-navigator";
-	import { writable } from "svelte/store";
+<script>
 
-	let showModal = false;
-	let email = "";
-	let password = "";
-	let isLoading = false;
-	let passwordVisible = false;
-	let errorMessage = writable(null);
+    let string = 'Dear Hiring Manager,<br /><br />I am writing to express my sincere interest in the Data Science and Engineering intern position at Malwarebytes. As a Computer Science student at Brown University with a passion for data analysis and visualization, I am excited about the opportunity to contribute to Malwarebytes\' mission of ensuring cyber protection for everyone.<br /><br />From researching your company, I am inspired by Malwarebytes\' commitment to rid the world of malware and provide comprehensive solutions for device protection, privacy, and prevention. I admire the dedication of CEO Marcin Kleczynski and the entire team in creating a safer digital environment for individuals and organizations to thrive.<br /><br />With my background in data analysis and engineering, I am confident in my ability to excel in this role. During my time at The Environmental Equity Atlas, I developed the most comprehensive U.S. Environmental Justice data visualization policy tool. This project involved extensive data analysis and cleaning using Python, numpy, and pandas. I worked with data aggregated by reputable sources such as FEMA, the EPA, CDC, and the U.S. Census. Additionally, I gained experience in statistical analysis and visualization tools like Tableau.<br /><br />Furthermore, as a Data Visualization Engineer at Brown Daily Herald, I was solely responsible for developing data visualizations for the independent student-led newspaper. I created an admission dashboard that provided valuable insights and enhanced the user experience. This experience allowed me to sharpen my skills in data visualization and work collaboratively with a team.<br /><br />My coursework in Data Science at Brown University has provided me with a strong foundation in relevant technologies and techniques, including Python, SQL, beautifulsoup, numpy, and scikit learn. I have worked extensively with NLP, web scraping, databases, data cleaning, clustering techniques, regression, and machine learning. These skills have equipped me with the ability to assemble and analyze large, complex data sets to derive actionable insights.<br /><br />Beyond my technical qualifications, I bring strong analytical, quantitative, and problem-solving skills to the table. I thrive in fast-paced environments and possess excellent communication skills, enabling me to collaborate effectively with cross-functional teams. My attention to detail and passion for data-driven decision-making align perfectly with the goals of the Data Science and Engineering team at Malwarebytes.<br /><br />I am genuinely excited about the opportunity to contribute to Malwarebytes\' ongoing success and would be grateful for the chance to discuss how my skills and experiences can directly benefit the company. Thank you for considering my application. I look forward to the possibility of an interview to further discuss my qualifications.<br /><br />Sincerely,<br />Ty Pham-Swann';
+    let words = string.split(/( |<br \/>)/);
+    let index = 0;
 
-	user.subscribe(($user) => {
-		if ($user) navigate("/form");
-	});
+    let interval;
+    function addWord() {
+        if (index < words.length) {
+            coverLetter += words[index];
+            index++;
+        } else {
+            clearInterval(interval);
+            setTimeout(() => {
+                // Reset the index and clear the div to restart the generation process
+                index = 0;
+                coverLetter = '';
+                // Restart the interval
+                interval = setInterval(addWord, 1);
+            }, 1000); // Delay of 1 second
+        }
+    }
 
-	async function handleGoogleSignIn() {
-		clearErrorMessage();
-		isLoading = true;
-		try {
-			await googleSignin();
-		} catch (error) {
-			setErrorMessage(error);
-		} finally {
-			isLoading = false;
-		}
-	}
+    let coverLetter = '';
+    interval = setInterval(addWord, 1);  // Add a word every 1 ms
 
-	async function handleEmailSignIn() {
-		console.log("Email sign-in started"); // Add console.log for debugging
-		clearErrorMessage();
-		if (email && password) {
-			isLoading = true;
-			try {
-				console.log("Trying to sign in"); // Add console.log for debugging
-				await emailSignin(email, password);
-				console.log("Signed in successfully"); // Add console.log for debugging
-			} catch (error) {
-				console.log("Caught an error in sign in:", error); // Add console.log for debugging
-				setErrorMessage(error);
-			} finally {
-				isLoading = false;
-			}
-		} else {
-			errorMessage.set("Please fill in all the required fields");
-		}
-	}
+    import { navigate } from 'svelte-navigator';
 
-	async function handleEmailSignUp() {
-		clearErrorMessage();
-		if (email && password) {
-			isLoading = true;
-			try {
-				await emailSignup(email, password);
-			} catch (error) {
-				setErrorMessage(error);
-			} finally {
-				isLoading = false;
-			}
-		} else {
-			errorMessage.set("Please fill in all the required fields");
-		}
-	}
+    // ... rest of your script
 
-	function togglePasswordVisibility() {
-		passwordVisible = !passwordVisible;
-	}
-
-	function setErrorMessage(error) {
-		console.log("Setting error message"); // log to see if the function is called
-		switch (error.code) {
-			case "auth/user-not-found":
-				errorMessage.set(
-					"There is no user corresponding to the given email. Please double-check your email or create an account."
-				);
-				break;
-			case "auth/wrong-password":
-				errorMessage.set("The password is invalid. Please try again.");
-				break;
-			case "auth/too-many-requests":
-				errorMessage.set(
-					"We have blocked all requests from this device due to unusual activity. Try again later."
-				);
-				break;
-			case "auth/email-already-in-use":
-				errorMessage.set(
-					"The email address is already in use by another account."
-				);
-				break;
-			case "auth/invalid-email":
-				errorMessage.set(
-					"The email address is not valid. Please enter a valid email address."
-				);
-				break;
-			case "auth/operation-not-allowed":
-				errorMessage.set(
-					"Password sign-in is disabled for this project. Contact the application administrator."
-				);
-				break;
-			case "auth/network-request-failed":
-				errorMessage.set(
-					"A network error has occurred. Please check your internet connection and try again."
-				);
-				break;
-			case "auth/weak-password":
-				errorMessage.set("The password must be 6 characters long or more.");
-				break;
-			default:
-				errorMessage.set("An error occurred. Please try again.");
-				break;
-		}
-	}
-
-	function clearErrorMessage() {
-		errorMessage.set(null);
-	}
+	const redirectToLogin = () => {
+  navigate('/login');
+};
 </script>
 
-<div class="w-screen h-screen flex gap-4 items-center bg-gray-100">
-	<div
-		class="flex-1 flex flex-col items-center justify-center text-center px-10"
-	>
-		<div class="text-8xl font-black text-gray-800">LetterGenAI</div>
-		<div class="w-[150px] h-1 bg-black block mx-auto my-4" />
-		<slot />
-		<div>
-			<h2 class="text-3xl font-medium mb-6 text-gray-600">
-				Never write a cover letter again
-			</h2>
+<style>
 
-			<button
-				class="bg-blue-500 hover:bg-blue-600 focus:outline-none font-lg text-white rounded-md h-9 px-4 py-2-5 text-sm inline-flex items-center mx-auto"
-				on:click={() => (showModal = true)}
-			>
-				Generate Cover Letter
-			</button>
-		</div>
-	</div>
-	<div class="flex-1 flex items-center justify-center p-10">
-		<img
-			src="/coverletterGIF.gif"
-			alt="Your GIF"
-			class="max-h-[70%] max-w-[70%] object-cover"
-		/>
-	</div>
+
+.content {
+    background-color: #F5F5F5;
+    margin: 0; /* remove default margin */
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: white;
+    padding: 0rem; /* Remove padding */
+    margin: 0; /* Remove margin */
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+}
+
+#logo {
+    max-width: 21%; /* Smaller logo */
+    height: auto;
+    padding-left:1.2rem;
+    padding-top:0.8rem;
+    padding-bottom:0.8rem;
+}
+
+.nav-left h1 {
+    margin-left: 10px;
+}
+
+.nav-right {
+    margin-right: 10px;
+}
+
+#account {
+    border: 0.2rem solid #0C44A5; /* Bigger stroke */
+    border-radius: 0.4rem;
+    background-color: transparent;
+    color: #0C44A5;
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    font-size: 1rem;
+    font-weight:500;
+    cursor: pointer;
+    margin:0;
+    margin-right:0.5rem;
+}
+
+.content {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px;
+}
+
+.left {
+    flex: 1.6; /* takes up 2 portions of space */
+    color: black;
+    text-align: center;
+}
+
+.left h2 {
+    color: black;
+    text-align: center;
+    margin-bottom: 0;
+    font-size:2.4rem;
+}
+
+.left .tagline {
+    color: #545454;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 20px; /* More distance */
+}
+
+.benefits {
+    margin-left: 3rem; /* More padding */
+    margin-right: 3rem; /* More padding */
+    padding-top:2rem;
+    text-align: left;
+}
+
+.benefits p{
+    margin-left: 0rem; /* More padding */
+    margin-right: 2rem; /* More padding */
+    margin-bottom:1.75rem;
+    font-size: 1.1rem;
+    color: #333333;
+}
+
+.generate-btn {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+#generate {
+    background-color: #0C44A5;
+    color: white;
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+    padding-top: 1.2rem;
+    padding-bottom: 1.2rem;
+    font-size: 1rem;
+    border: none;
+    cursor: pointer;
+    margin-top:5rem;
+}
+
+.right {
+    flex: 1.4; /* takes up 2 portions of space */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#process-img {
+    max-width: 80%;
+    height: auto;
+    padding-top:2rem;
+}
+
+.cover-letter {
+    width: 18rem;
+    height: 24rem;
+    background-color: white;
+    margin-top: 20px;
+    margin-right:5rem;
+    padding: 2rem;
+    padding-left: 3rem;
+    padding-right: 2rem;
+    padding-top:2.5rem;
+    padding-bottom:2rem;
+    font-size:0.38rem;
+    line-height: 1.5; /* emulate Google Docs line spacing */
+}
+
+
+
+
+
+@media only screen and (max-width: 600px) {
+    nav {
+        flex-direction: column;
+    }
+
+    .nav-left, .nav-right {
+        margin: 0;
+    }
+
+    .content {
+        flex-direction: column;
+        padding: 10px;
+    }
+
+    .left, .right {
+        flex: none;
+    }
+
+    .benefits, .generate-btn {
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+
+    #process-img {
+        max-width: 100%;
+    }
+
+    .cover-letter {
+        width: 90%;
+        margin-right:0;
+    }
+}
+</style>
+<nav>
+    <div class="nav-left">
+        <img src="/LetterGen.svg" alt="LetterGen Logo" id="logo">
+        <h1>LetterGenAI</h1>
+    </div>
+    <div class="nav-right">
+        <button id="account">My Account</button>
+    </div>
+</nav>
+<div class="content">
+    <div class="left">
+        <h2>Your Personalized Cover Letter Writer</h2>
+        <h2 class="tagline">Instant. Effortless. You.</h2>
+        <div class="benefits">
+            <p><b>1) Tailored to Your Unique Style:</b> Upload your writing samples for a cover letter that's authentically you.</p>
+            <p><b>2) Instant Results:</b> Say goodbye to endless hours spent crafting the perfect letter. Your time is valuable, let us help you save it.</p>
+            <p><b>3) Amplify Your Opportunities:</b> Boost your job applications with personalized, polished, and professional cover letters.</p>
+        </div>
+        <div class="generate-btn">
+			<button id="generate" on:click={() => navigate('/login')}>Generate Your Cover Letter Now</button>
+        </div>
+    </div>
+    <div class="right">
+        <img src="/process.png" alt="Process" id="process-img">
+        <div class="cover-letter" id="cover-letter">{@html coverLetter}</div>
+    </div>
 </div>
 
-{#if showModal}
-	<div class="fixed z-10 inset-0 overflow-y-auto">
-		<div
-			class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"
-		>
-			<div class="fixed inset-0 transition-opacity" aria-hidden="true">
-				<div class="absolute inset-0 bg-gray-500 opacity-75" />
-			</div>
-			<span
-				class="hidden sm:inline-block sm:align-middle sm:h-screen"
-				aria-hidden="true">&#8203;</span
-			>
-			<div
-				class="inline-block align-middle bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
-			>
-				<div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-					<div class="sm:flex sm:items-start">
-						<div class="w-full mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-							<h3 class="text-lg leading-6 font-medium text-gray-900">
-								Sign In / Sign Up
-							</h3>
-							<div class="mt-2">
-								{#if $errorMessage}
-									<div class="bg-red-500 text-white rounded p-2 mb-2">
-										{$errorMessage}
-									</div>
-								{/if}
-
-								<input
-									type="email"
-									bind:value={email}
-									class="my-2 w-full rounded-md border-gray-300"
-									placeholder="Email"
-									disabled={isLoading}
-								/>
-								<div class="relative">
-									{#if passwordVisible}
-										<input
-											type="text"
-											bind:value={password}
-											class="my-2 w-full rounded-md border-gray-300"
-											placeholder="Password"
-											disabled={isLoading}
-										/>
-									{:else}
-										<input
-											type="password"
-											bind:value={password}
-											class="my-2 w-full rounded-md border-gray-300"
-											placeholder="Password"
-											disabled={isLoading}
-										/>
-									{/if}
-									<div
-										class="absolute inset-y-0 right-0 pr-3 flex items-center"
-									>
-										<button
-											type="button"
-											class={isLoading
-												? "cursor-not-allowed"
-												: "cursor-pointer"}
-											on:click={togglePasswordVisibility}
-											disabled={isLoading}
-										>
-											{#if passwordVisible}
-												<span class="fas fa-eye-slash" />
-											{:else}
-												<span class="fas fa-eye" />
-											{/if}
-										</button>
-									</div>
-								</div>
-								<button
-									class="bg-gray-200 hover:bg-gray-300 focus:outline-none font-lg text-gray-700 rounded-md h-10 px-4 py-2 text-sm flex items-center justify-center w-full"
-									on:click={handleGoogleSignIn}
-								>
-									<img
-										src="/google_logo.png"
-										alt="Google logo"
-										class="w-4 h-4 mr-2"
-									/>
-									Sign in with Google
-								</button>
-								<button
-									class="bg-blue-500 hover:bg-blue-600 focus:outline-none font-lg text-white rounded-md h-10 px-4 py-2 text-sm flex items-center justify-center w-full"
-									on:click={handleEmailSignIn}
-								>
-									Sign In with Email
-								</button>
-								<button
-									class="mt-3 flex justify-center items-center bg-transparent border-none cursor-pointer text-blue-500 hover:underline"
-									on:click={handleEmailSignUp}
-									disabled={isLoading}
-								>
-									{#if isLoading}
-										<span>Loading...</span>
-									{:else}
-										<span>Create an account</span>
-									{/if}
-								</button>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-					<button
-						type="button"
-						class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-						on:click={() => {
-							showModal = false;
-							clearErrorMessage();
-						}}
-					>
-						Close
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-{/if}
-
-<style>
-	.bg-gray-100 {
-		background-color: #f7fafc;
-	}
-
-	.text-gray-800 {
-		color: #2d3748;
-	}
-
-	.text-gray-600 {
-		color: #4a5568;
-	}
-
-	.bg-blue-500 {
-		background-color: #4299e1;
-	}
-
-	.hover\:bg-blue-600:hover {
-		background-color: #3182ce;
-	}
-
-	.text-white {
-		color: #fff;
-	}
-
-	.rounded-md {
-		border-radius: 0.375rem;
-	}
-
-	.inline-flex {
-		display: inline-flex;
-	}
-
-	.items-center {
-		align-items: center;
-	}
-
-	.justify-center {
-		justify-content: center;
-	}
-
-	.flex-col {
-		flex-direction: column;
-	}
-
-	.flex {
-		display: flex;
-	}
-
-	.w-screen {
-		width: 100vw;
-	}
-
-	.h-screen {
-		height: 100vh;
-	}
-
-	.font-black {
-		font-weight: 900;
-	}
-
-	.text-center {
-		text-align: center;
-	}
-
-	.h-1 {
-		height: 1px;
-	}
-
-	.block {
-		display: block;
-	}
-
-	.font-medium {
-		font-weight: 500;
-	}
-
-	.mb-6 {
-		margin-bottom: 1.5rem;
-	}
-
-	.font-lg {
-		font-size: 1.125rem;
-	}
-
-	.h-9 {
-		height: 2.25rem;
-	}
-
-	.px-4 {
-		padding-left: 1rem;
-		padding-right: 1rem;
-	}
-
-	.py-2-5 {
-		padding-top: 0.625rem;
-		padding-bottom: 0.625rem;
-	}
-
-	.text-sm {
-		font-size: 0.875rem;
-	}
-</style>
