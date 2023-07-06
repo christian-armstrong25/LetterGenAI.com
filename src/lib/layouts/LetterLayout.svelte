@@ -6,27 +6,34 @@
 	import docxtemplater from 'docxtemplater';
 	import PizZip from 'pizzip';
 	import { saveAs } from 'file-saver';  
+	import { coverLetter } from "../stores/coverLetter";
 
-	let string = 'Dear Hiring Manager,<br /><br />I am writing to express my sincere interest in the Data Science and Engineering intern position at Malwarebytes. As a Computer Science student at Brown University with a passion for data analysis and visualization, I am excited about the opportunity to contribute to Malwarebytes\' mission of ensuring cyber protection for everyone.<br /><br />From researching your company, I am inspired by Malwarebytes\' commitment to rid the world of malware and provide comprehensive solutions for device protection, privacy, and prevention. I admire the dedication of CEO Marcin Kleczynski and the entire team in creating a safer digital environment for individuals and organizations to thrive.<br /><br />With my background in data analysis and engineering, I am confident in my ability to excel in this role. During my time at The Environmental Equity Atlas, I developed the most comprehensive U.S. Environmental Justice data visualization policy tool. This project involved extensive data analysis and cleaning using Python, numpy, and pandas. I worked with data aggregated by reputable sources such as FEMA, the EPA, CDC, and the U.S. Census. Additionally, I gained experience in statistical analysis and visualization tools like Tableau.<br /><br />Furthermore, as a Data Visualization Engineer at Brown Daily Herald, I was solely responsible for developing data visualizations for the independent student-led newspaper. I created an admission dashboard that provided valuable insights and enhanced the user experience. This experience allowed me to sharpen my skills in data visualization and work collaboratively with a team.<br /><br />My coursework in Data Science at Brown University has provided me with a strong foundation in relevant technologies and techniques, including Python, SQL, beautifulsoup, numpy, and scikit learn. I have worked extensively with NLP, web scraping, databases, data cleaning, clustering techniques, regression, and machine learning. These skills have equipped me with the ability to assemble and analyze large, complex data sets to derive actionable insights.<br /><br />Beyond my technical qualifications, I bring strong analytical, quantitative, and problem-solving skills to the table. I thrive in fast-paced environments and possess excellent communication skills, enabling me to collaborate effectively with cross-functional teams. My attention to detail and passion for data-driven decision-making align perfectly with the goals of the Data Science and Engineering team at Malwarebytes.<br /><br />I am genuinely excited about the opportunity to contribute to Malwarebytes\' ongoing success and would be grateful for the chance to discuss how my skills and experiences can directly benefit the company. Thank you for considering my application. I look forward to the possibility of an interview to further discuss my qualifications.<br /><br />Sincerely,<br />Ty Pham-Swann';
-	let words = string.split(/( |<br \/>)/);
+	let coverLetterValue = '';
+	coverLetter.subscribe(value => {
+		coverLetterValue = value
+		.replace(/\n/g, '<br />')
+		.replace(/^ +/gm, (match) => match.replace(/ /g, "&nbsp;"));
+	});
+
+	let words = coverLetterValue.split(/( |<br \/>)/);
 	let index = 0;
   
 	let interval;
 	function addWord() {
 	  if (index < words.length) {
-		coverLetter += words[index];
+		coverLetterValue += words[index];
 		index++;
 	  } 	
 	}
   
-	let coverLetter = '';
+
 	onMount(() => {
 	  interval = setInterval(addWord, 1);  // Add a word every 1 ms
 	});
 
 
     function prepareTextForExport() {
-        let text = coverLetter.replace(/<br \/>/g, "\n"); // replace all <br />
+        let text = coverLetterValue.replace(/<br \/>/g, "\n"); // replace all <br />
         text = text.replace(/<div>/g, "\n"); // replace opening <div> with \n
         text = text.replace(/<\/div>/g, ""); // remove closing </div>
         return text;
@@ -197,7 +204,7 @@ async function exportDoc() {
   <Navbar />
   <div class='all'>
   <div class="coverLetter">
-	<p id="cover-letter-text" contenteditable bind:innerHTML={coverLetter}></p>
+	<p id="cover-letter-text" contenteditable bind:innerHTML={coverLetterValue}></p>
 	<p id="edit-letter">Click on Letter to Edit</p>
   </div>
   

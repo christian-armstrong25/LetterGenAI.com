@@ -18,8 +18,11 @@
 	import HomeLayout from "./src/lib/layouts/HomeLayout.svelte";
 	import LetterLayout from "./src/lib/layouts/LetterLayout.svelte";
 	import LazyRoute from "./src/lib/router/LazyRoute.svelte";
-	
+
+
 	let ready: boolean = false;
+
+
 
 	/* LAYOUT MANAGEMENT */
 	let currentLayout: Layout;

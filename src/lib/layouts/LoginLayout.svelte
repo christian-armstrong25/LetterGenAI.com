@@ -1,7 +1,31 @@
 <script>
     import Navbar from '../components/Navbar.svelte';
     import { navigate } from 'svelte-navigator';
-    // More Svelte code may be added here if needed.
+    import { googleSignin, emailSignin } from "$plugins/firebase/auth.firebase";
+    let email = '';
+    let password = '';
+    let loginError = '';  // New variable to store login error message
+
+    const handleGoogleSignin = async () => {
+        try {
+            await googleSignin();
+            navigate('/form');
+        } catch (error) {
+            console.error("Google Signin Error:", error);
+            loginError = error.message; // Save the error message when an error occurs
+        }
+    };
+
+    const handleEmailSignin = async (event) => {
+        event.preventDefault();
+        try {
+            await emailSignin(email, password);
+            navigate('/form');
+        } catch (error) {
+            console.error("Email Signin Error:", error);
+            loginError = 'Incorrect email or password. Please try again.'; // Save the error message when an error occurs
+        }
+    };
 </script>
     
 <style>
@@ -134,29 +158,38 @@
         margin-top:-0.4rem;
         font-size: 0.9rem;
         cursor: pointer;
+        width:8rem;
     }
 
     .stay input{
         border-radius: 0;
     }
 
+    #incorrect{
+        color:red;
+        font-size:0.85rem;
+        padding:0;
+    }
+
 </style>
-    
 <Navbar />
 <div class='login-page'>
     <div class="white-box">
         <h2>Sign In to your account</h2>
-        <form>
-            <label for="username">Username</label>
-            <input id="username" type="text" />
+        <form on:submit={handleEmailSignin}>
+            <label for="email">Email</label>
+            <input id="email" type="email" bind:value={email} required />
             <label for="password">Password</label>
-            <input id="password" type="password" />
-            <a class="forgot-password" href="#" on:click={() => navigate('/forgot')}>Forgot your password?</a> 
+            <input id="password" type="password" bind:value={password} required />
+            {#if loginError} 
+            <p id="incorrect">{loginError}</p>
+            {/if}
+            <a class="forgot-password" href="#" on:click={() => navigate('/forgot')}>Forgot your password?</a>
             <label class="stay"><input type="checkbox"> Stay signed in</label>
-            <button on:click={() => navigate('/form')}>Login</button>
+            <button type="submit">Login</button>
         </form>
         <p class="google-sign-in">Or</p>
-        <button class="google-sign-in-btn">
+        <button class="google-sign-in-btn" on:click={handleGoogleSignin}>
             <div class="logo-container">
                 <img src="google_logo.png" alt="Google Logo" />
             </div>

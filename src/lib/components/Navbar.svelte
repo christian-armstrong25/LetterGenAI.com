@@ -1,14 +1,31 @@
 <script>
     import { navigate } from 'svelte-navigator';
+    import { user } from "$stores/user";
+    import { logout} from "$plugins/firebase/auth.firebase";
     let showOverlay = false;
 
     function goToHome() {
-        navigate('/home');
+        navigate('/');
     }
 
     function toggleOverlay() {
         showOverlay = !showOverlay;
     }
+
+    function handleAccountClick() {
+        if ($user?.email) {
+            toggleOverlay();
+        } else {
+            navigate('/login');
+        }
+    }
+    
+    async function handleLogout() {  // Create handleLogout function
+        await logout();  // Logout user
+        navigate('/');  // Navigate to home
+    }
+
+    $: userEmail = $user?.email || null;
 </script>
 
 <style>
@@ -68,7 +85,6 @@ nav {
     border: 1px solid #ddd;
     padding: 10px;
     width: 9rem;
-    height:3.2rem;
     z-index: 100;
     font-size:0.9rem;
 }
@@ -81,24 +97,47 @@ nav {
         display: block;
         cursor: pointer;
         margin-bottom: 10px;
+        border-top: 1px solid black; /* Add a thin black line */
+        padding-top:0.6rem;
     }
 
 #btn2{
     border-top: 1px solid black; /* Add a thin black line */
     padding-top:0.5rem;
 }
+
+#logged{
+    font-size:0.6rem;
+    padding:0;
+    margin:0;
+    padding-bottom:0.75rem;
+    cursor:pointer;
+}
+
+#me{
+    position:relative;
+    top:0.25rem;
+    width:1rem;
+    height:auto;
+    margin:0;
+    padding:0;
+    cursor:pointer;
+}
 </style>
 
 <nav>
-    <div class="nav-left" on:click={() => navigate('/')}>
+    <div class="nav-left" on:click={goToHome}>
         <img src="/LetterGen.svg" alt="LetterGen Logo" id="logo">
         <h1>LetterGenAI</h1>
     </div>
     <div class="nav-right">
-        <button id="account" on:click={toggleOverlay}>My Account</button>
-        <div class="overlay {showOverlay ? 'show' : ''}">
-            <span class="overlay-button" on:click={() => navigate('/settings')}>Account Settings</span>
-            <span id="btn2" class="overlay-button" on:click={() => { /* account settings functionality here */ }}>Log Out</span>
+        <button id="account" on:click={handleAccountClick}>{userEmail ? 'My Account' : 'Sign In'}</button>
+        {#if userEmail}
+        <div class="overlay {showOverlay ? 'show' : ''}" style="height: 5.75rem;">
+            <p id="logged" on:click={() => navigate('/settings')} ><img src="person.png" id="me"> {userEmail}</p>
+            <span class="overlay-button" on:click={() => navigate('/settings') } style="border-top: 1px black solid;padding-top: 0.6rem;">Account Settings</span>
+            <span id="btn2" class="overlay-button" on:click={handleLogout}>Log Out</span>
         </div>
+        {/if}
     </div>
 </nav>

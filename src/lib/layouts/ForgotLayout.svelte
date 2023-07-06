@@ -1,34 +1,24 @@
 <script>
     import { onMount } from 'svelte';
-
-    import Navbar from '../components/Navbar.svelte';
     import { navigate } from 'svelte-navigator';
+    import Navbar from '../components/Navbar.svelte';
+    import { sendResetPasswordEmail } from "$plugins/firebase/auth.firebase"; 
 
     let email = '';
-    let code = '';
-    let showCodeInput = false;
+    let showConfirmation = false;
 
-    function sendCode() {
-        // Send the authentication code to the user's email
-        console.log(`Sending code to ${email}`);
-        alert('Code has been sent to your email');
-        showCodeInput = true;
-    }
-
-    let submitCode = () => {
-        // Handle code submission logic here
-        navigate('/form');
-    }
-
-    let resendCode = () => {
-        // Resend the authentication code to the user's email
-        console.log(`Resending code to ${email}`);
-        alert('Code has been resent to your email');
+    async function sendResetEmail() {
+        try {
+            await sendResetPasswordEmail(email);
+            showConfirmation = true;
+        } catch (error) {
+            console.error(error);
+            alert('Error sending password reset email: ', error);
+        }
     }
 
     onMount(() => {
-        // Hide the code input on initial load
-        showCodeInput = false;
+        showConfirmation = false;
     });
 </script>
 
@@ -39,23 +29,18 @@
         <form>
             <label for="email">Email</label>
             <input id="email" type="email" bind:value={email} />
-            {#if !showCodeInput}
-                <button on:click={sendCode}>Send Code</button>
-            {/if}
-            {#if showCodeInput}
-            <p>A code has been sent to your email. Please enter the code below.</p>
-        {/if}
-            {#if showCodeInput}
-                <label for="auth-code">Authentication Code</label>
-                <input id="auth-code" type="text" bind:value={code} />
-                <button on:click={submitCode} >Submit</button>
-                <button class="resend-code" on:click={resendCode}>Resend Code</button>
-            {/if}
 
+            {#if !showConfirmation}
+                <button on:click|preventDefault={sendResetEmail}>Send Reset Email</button>
+            {:else}
+                <p>Password reset email has been sent. Please check your inbox.</p>
+            {/if}
         </form>
         <p class="new-account">Remember your password? <a href="#" on:click={() => navigate('/login')}>Sign In</a></p>
     </div>
 </div>
+
+
 <style>
         .resend-code {
         background-color: transparent;

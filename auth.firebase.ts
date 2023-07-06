@@ -1,4 +1,4 @@
-import { user } from "$stores/user";
+$stores/user";
 import {
 	GoogleAuthProvider,
 	createUserWithEmailAndPassword,
@@ -6,10 +6,8 @@ import {
 	signInWithPopup,
 	signOut,
 	sendPasswordResetEmail,
-	deleteUser,
-	updateProfile,
-	reauthenticateWithCredential, 
-  EmailAuthProvider 
+    deleteUser,
+    updateProfile
 } from "firebase/auth";
 import { auth } from "./firebase";
 
@@ -77,27 +75,16 @@ export const getUserData = async () => {
 	}
 };
 
-// Delete User
-// Delete User
-export const deleteAccount = async (password) => {
+export const deleteAccount = async () => {
 	try {
-	  const user = auth.currentUser;
-  
-	  const credential = EmailAuthProvider.credential(
-		user.email, 
-		password
-	  );
-	  await reauthenticateWithCredential(user, credential);
-  
-	  await deleteUser(user);
+		const user = auth.currentUser;
+		await deleteUser(user);
 	} catch (error) {
-	  console.error("Error in deleteAccount:", error);
-	  throw error;
+		console.error("Error in deleteAccount:", error);
+		throw error;
 	}
-  };
-  
+};
 
-// Upgrade Plan
 export const upgradePlan = async () => {
 	try {
 		// upgrade plan logic goes here
@@ -106,4 +93,3 @@ export const upgradePlan = async () => {
 		throw error;
 	}
 };
-

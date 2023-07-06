@@ -1,18 +1,47 @@
 <script>
-    import Navbar from '../components/Navbar.svelte';
-    let firstName = "John";
-    let lastName = "Smith";
-    let email = "john.smith@example.com";
-    let enableEmailNotifications = false;
-  
-    function upgradePlan() {
-      // Add logic for upgrading the plan
+  import { onMount } from 'svelte';
+  import Navbar from '../components/Navbar.svelte';
+  import { getUserData, deleteAccount, upgradePlan} from "$plugins/firebase/auth.firebase";
+  import { navigate } from 'svelte-navigator';
+  let user;
+  let firstName = "";
+  let lastName = "";
+
+  onMount(async () => {
+    user = await getUserData();
+    console.log(user?.displayName)
+    if (user?.displayName) {
+      let names = user.displayName.split(' ');
+      firstName = names[0];
+      lastName = names.length > 1 ? names.slice(1).join(' ') : '';
     }
-  
-    function deleteAccount() {
-      // Add logic for deleting the account
+  });
+
+  async function handleDeleteAccount() {
+  let password = prompt('Please enter your password for confirmation:');
+
+  if (password) {
+    try {
+      await deleteAccount(password);
+      navigate('/')
+    } catch(error) {
+      console.error('Error in reauthentication', error);
     }
-  </script>
+  } else {
+    console.error('Password is required for account deletion');
+  }
+}
+
+  async function handleUpgradePlan() {
+    await upgradePlan();
+    // navigate to billing or home page
+  }
+
+  async function enableEmailNotifications() {
+    // navigate to billing or home page
+  }
+
+</script>
   <Navbar/>
   <div class="all">
     <div class="container">
@@ -23,7 +52,7 @@
         <div class="subtitle">
           <img class="logo" src="LetterGen.ico" alt="Logo" />
           <h4>Free Plan</h4>
-          <button class="upgrade-button" onclick="upgradePlan()">Upgrade Plan</button>
+          <button class="upgrade-button" on:click={handleUpgradePlan}>Upgrade Plan</button>
         </div>
       </div>
   
@@ -31,7 +60,7 @@
         <h2>Personal Information</h2>
         <input type="text" value={firstName} readonly style="border: none; border-radius: 0; background-color: #F5F5F5; padding: 10px; width: 7rem;" />
         <input type="text" value={lastName} readonly style="border: none; border-radius: 0; background-color: #F5F5F5; padding: 10px; width: 7rem;" />
-        <input type="text" value={email} readonly style="border: none; border-radius: 0; background-color: #F5F5F5; padding: 10px; width: 14rem;" />
+        <input type="text" value={user?.email} readonly style="border: none; border-radius: 0; background-color: #F5F5F5; padding: 10px; width: 14rem;" />
       </div>
   
       <div class="white-box">
@@ -39,12 +68,12 @@
           <h2>Account</h2>
         </div>
         <label class="toggle-label">
-          <input type="checkbox" bind:checked={enableEmailNotifications} />
+          <input type="checkbox" />
           Enable Email Notifications
         </label>
         <div style="display: flex; align-items: center;">
           <p style="margin-right: 10px;">This action is permanent and cannot be undone</p>
-          <button class="delete-button" onclick="deleteAccount()">Delete Account</button>
+          <button class="delete-button" on:click={handleDeleteAccount}>Delete Account</button>
         </div>
       </div>
     </div>
