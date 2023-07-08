@@ -2,11 +2,7 @@
 	import { onMount } from "svelte";
 	import Navbar from "../components/Navbar.svelte";
 
-	let images = [
-		"public/loading_1.gif",
-		"public/loading_2.gif",
-		"public/loading_3.gif",
-	];
+	let images = ["loading_1.gif", "loading_2.gif", "loading_3.gif"];
 	let currentImage = images[0];
 	let loadingTime = 15000; // Set your loading time here in milliseconds
 

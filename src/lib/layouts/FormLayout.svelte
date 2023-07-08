@@ -708,14 +708,6 @@
 		padding-top: 0.2rem;
 	}
 
-	#uploaded_resume {
-		padding-left: 1rem;
-		padding-top: 0;
-		padding-bottom: 0;
-		margin-top: 0;
-		margin-bottom: 0;
-	}
-
 	#loading-resume {
 		width: 2rem;
 		position: absolute;
