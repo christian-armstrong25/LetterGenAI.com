@@ -1,16 +1,16 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+	import { onMount } from "svelte";
 
-  export let component;
-  let loadedComponent;
+	export let component;
+	let loadedComponent;
 
-  onMount(() => {
-    component().then((module) => {
-      loadedComponent = module.default;
-    });
-  });
+	onMount(() => {
+		component().then((module) => {
+			loadedComponent = module.default;
+		});
+	});
 </script>
 
 {#if loadedComponent}
-  <svelte:component this={loadedComponent} />
+	<svelte:component this={loadedComponent} />
 {/if}

@@ -2,14 +2,12 @@ import { user } from "$stores/user";
 import {
 	GoogleAuthProvider,
 	createUserWithEmailAndPassword,
+	deleteUser,
+	sendPasswordResetEmail,
 	signInWithEmailAndPassword,
 	signInWithPopup,
 	signOut,
-	sendPasswordResetEmail,
-	deleteUser,
 	updateProfile,
-	reauthenticateWithCredential, 
-  EmailAuthProvider 
 } from "firebase/auth";
 import { auth } from "./firebase";
 
@@ -40,13 +38,18 @@ export const emailSignin = async (email: string, password: string) => {
 };
 
 // Email/Password Signup
-export const emailSignup = async (email: string, password: string, firstName: string, lastName: string) => {
+export const emailSignup = async (
+	email: string,
+	password: string,
+	firstName: string,
+	lastName: string
+) => {
 	try {
 		const result = await createUserWithEmailAndPassword(auth, email, password);
 		const authUser = result.user;
-        await updateProfile(authUser, {
-            displayName: firstName + " " + lastName,
-        });
+		await updateProfile(authUser, {
+			displayName: firstName + " " + lastName,
+		});
 		user.set(authUser);
 	} catch (error) {
 		console.error("Error in emailSignup:", error);
@@ -54,17 +57,16 @@ export const emailSignup = async (email: string, password: string, firstName: st
 	}
 };
 
-
 export const logout = () => {
 	signOut(auth);
 };
 
 export async function sendResetPasswordEmail(email) {
-    try {
-        await sendPasswordResetEmail(auth, email);
-    } catch (error) {
-        throw error;
-    }
+	try {
+		await sendPasswordResetEmail(auth, email);
+	} catch (error) {
+		throw error;
+	}
 }
 
 export const getUserData = async () => {
@@ -77,27 +79,16 @@ export const getUserData = async () => {
 	}
 };
 
-// Delete User
-// Delete User
-export const deleteAccount = async (password) => {
+export const deleteAccount = async () => {
 	try {
-	  const user = auth.currentUser;
-  
-	  const credential = EmailAuthProvider.credential(
-		user.email, 
-		password
-	  );
-	  await reauthenticateWithCredential(user, credential);
-  
-	  await deleteUser(user);
+		const user = auth.currentUser;
+		await deleteUser(user);
 	} catch (error) {
-	  console.error("Error in deleteAccount:", error);
-	  throw error;
+		console.error("Error in deleteAccount:", error);
+		throw error;
 	}
-  };
-  
+};
 
-// Upgrade Plan
 export const upgradePlan = async () => {
 	try {
 		// upgrade plan logic goes here
@@ -106,4 +97,3 @@ export const upgradePlan = async () => {
 		throw error;
 	}
 };
-

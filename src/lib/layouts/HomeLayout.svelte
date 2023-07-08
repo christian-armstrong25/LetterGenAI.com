@@ -55,53 +55,6 @@
     margin: 0; /* remove default margin */
 }
 
-nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    background-color: white;
-    padding: 0rem; /* Remove padding */
-    margin: 0; /* Remove margin */
-}
-
-.nav-left {
-    display: flex;
-    align-items: center;
-}
-
-#logo {
-    max-width: 21%; /* Smaller logo */
-    height: auto;
-    padding-left:1.2rem;
-    padding-top:0.8rem;
-    padding-bottom:0.8rem;
-}
-
-.nav-left h1 {
-    margin-left: 10px;
-}
-
-.nav-right {
-    margin-right: 10px;
-}
-
-#account {
-    border: 0.2rem solid #0C44A5; /* Bigger stroke */
-    border-radius: 0.4rem;
-    background-color: transparent;
-    color: #0C44A5;
-    padding-left: 2.5rem;
-    padding-right: 2.5rem;
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
-    font-size: 1rem;
-    font-weight:500;
-    cursor: pointer;
-    margin:0;
-    margin-right:0.5rem;
-}
-
 .content {
     display: flex;
     justify-content: space-between;
@@ -195,13 +148,6 @@ nav {
 
 
 @media only screen and (max-width: 600px) {
-    nav {
-        flex-direction: column;
-    }
-
-    .nav-left, .nav-right {
-        margin: 0;
-    }
 
     .content {
         flex-direction: column;
@@ -246,4 +192,3 @@ nav {
         <div class="cover-letter" id="cover-letter">{@html coverLetter}</div>
     </div>
 </div>
-
