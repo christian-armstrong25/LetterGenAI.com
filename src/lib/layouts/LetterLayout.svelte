@@ -21,12 +21,16 @@
 		}
 	}
 
+	let coverLetterHTML = "";
+	let coverLetterText = "";
+
 	coverLetter.subscribe((value) => {
-		coverLetterValue = value
+		coverLetterText = value;
+		coverLetterHTML = value
 			.replace(/\n/g, "<br>")
 			.replace(/^ +/gm, (match) => match.replace(/ /g, "&nbsp;"));
 		if (editableDiv) {
-			editableDiv.innerHTML = coverLetterValue;
+			editableDiv.innerHTML = coverLetterHTML;
 		}
 	});
 
@@ -60,7 +64,7 @@
 			const content = await loadFile("/template.docx");
 			const zip = new PizZip(content);
 			const doc = new docxtemplater().loadZip(zip);
-			doc.setData({ content: coverLetterValue }); // set your string data here
+			doc.setData({ content: coverLetterText });
 			doc.render();
 			const out = doc.getZip().generate({
 				type: "blob",
@@ -90,8 +94,8 @@
 	}
 
 	function copyToClipboard(e) {
-		navigator.clipboard.writeText(coverLetterValue);
-		showCopyTooltip(e); // Show the tooltip after copying
+		navigator.clipboard.writeText(coverLetterText);
+		showCopyTooltip(e);
 	}
 </script>
 
