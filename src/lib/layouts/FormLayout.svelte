@@ -376,7 +376,7 @@
 								on:click={() => document.getElementById("getFile2").click()}
 							>
 								<div class="logo-container">
-									<img src="public/upload-icon.png" alt="Upload Icon" />
+									<img src="/upload-icon.png" alt="Upload Icon" />
 								</div>
 								<div class="text-container">Upload Sample #2 (Optional)</div>
 							</button>
@@ -443,7 +443,7 @@
 					on:click={() => document.getElementById("resumeUpload").click()}
 				>
 					<div class="logo-container">
-						<img src="public/upload-icon.png" alt="Upload Icon" />
+						<img src="/upload-icon.png" alt="Upload Icon" />
 					</div>
 					<div class="text-container">Upload New PDF</div>
 				</button>
