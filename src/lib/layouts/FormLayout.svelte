@@ -328,9 +328,6 @@
 			if (selectedResume === id) {
 				selectedResume = uploadedResumes[0] || "";
 			}
-
-			// Write updated data to the database
-			await writeUserData();
 		}
 	}
 </script>
@@ -467,23 +464,23 @@
 		<div class="section">
 			<h2>Resume<span class="required-star">*</span></h2>
 			{#if uploadedResumes.includes(selectedResume)}
-			<select bind:value={selectedResume}>
-				{#each uploadedResumes as resumeKey (resumeKey)}
-					<option value={resumeKey}>
-						{resumeKey === selectedResume
-							? `Selected: ${resumesData[resumeKey].fileName}`
-							: resumesData[resumeKey].fileName}
-					</option>
-				{/each}
-			</select>
-			<button 
-				on:click={() => removeResume(selectedResume)}
-				disabled={!selectedResume}
-			>
-				Remove Selected Resume
-			</button>
-			<p class="style-or">or</p>
-		{/if}
+				<select bind:value={selectedResume}>
+					{#each uploadedResumes as resumeKey (resumeKey)}
+						<option value={resumeKey}>
+							{resumeKey === selectedResume
+								? `Selected: ${resumesData[resumeKey].fileName}`
+								: resumesData[resumeKey].fileName}
+						</option>
+					{/each}
+				</select>
+				<button
+					on:click={() => removeResume(selectedResume)}
+					disabled={!selectedResume}
+				>
+					Remove Selected Resume
+				</button>
+				<p class="style-or">or</p>
+			{/if}
 			<div
 				class="file-upload"
 				id="resume-upload"
