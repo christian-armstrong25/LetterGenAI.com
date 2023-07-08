@@ -1,6 +1,9 @@
 <script lang="ts">
 	import Links from "$/components/Links.svelte";
+	import ForgotLayout from "$/layouts/ForgotLayout.svelte";
 	import Loading1Layout from "$/layouts/Loading1Layout.svelte";
+	import LoginLayout from "$/layouts/LoginLayout.svelte";
+	import SignUpLayout from "$/layouts/SignUpLayout.svelte";
 	import RouteChangeHandler from "$/router/RouteChangeHandler.svelte";
 	import type { Layout } from "$/router/router";
 	import { currentRoute, routes } from "$/router/router";
@@ -10,6 +13,7 @@
 	import { onAuthStateChanged } from "firebase/auth";
 	import { onMount } from "svelte";
 	import { Route, Router } from "svelte-navigator";
+	import AccountSettingsLayout from "./src/lib/layouts/AccountSettingsLayout.svelte";
 	import FormLayout from "./src/lib/layouts/FormLayout.svelte";
 	import HomeLayout from "./src/lib/layouts/HomeLayout.svelte";
 	import LetterLayout from "./src/lib/layouts/LetterLayout.svelte";
@@ -42,8 +46,8 @@
 </script>
 
 {#if ready}
-	<main class="min-h-screen w-screen bg-white">
-		<div class="fixed top-2 right-2">
+	<main>
+		<div>
 			<Links />
 		</div>
 		<Router>
@@ -69,6 +73,30 @@
 						<LazyRoute component={route.component} path={route.path} />
 					{/each}
 				</Loading1Layout>
+			{:else if currentLayout === "settings"}
+				<AccountSettingsLayout>
+					{#each routes.filter((r) => r.layout === "settings") as route}
+						<LazyRoute component={route.component} path={route.path} />
+					{/each}
+				</AccountSettingsLayout>
+			{:else if currentLayout === "login"}
+				<LoginLayout>
+					{#each routes.filter((r) => r.layout === "login") as route}
+						<LazyRoute component={route.component} path={route.path} />
+					{/each}
+				</LoginLayout>
+			{:else if currentLayout === "signup"}
+				<SignUpLayout>
+					{#each routes.filter((r) => r.layout === "signup") as route}
+						<LazyRoute component={route.component} path={route.path} />
+					{/each}
+				</SignUpLayout>
+			{:else if currentLayout === "forgot"}
+				<ForgotLayout>
+					{#each routes.filter((r) => r.layout === "forgot") as route}
+						<LazyRoute component={route.component} path={route.path} />
+					{/each}
+				</ForgotLayout>
 			{:else if currentLayout === "letter"}
 				<LetterLayout>
 					{#each routes.filter((r) => r.layout === "letter") as route}
@@ -79,3 +107,10 @@
 		</Router>
 	</main>
 {/if}
+
+<style>
+	:global(body) {
+		font-family: "Roboto", sans-serif;
+		margin: 0;
+	}
+</style>

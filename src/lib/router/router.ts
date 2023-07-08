@@ -1,6 +1,6 @@
 import { writable, type Writable } from "svelte/store";
 
-export type Layout = "home" | "form" | "letter" | "loading1";
+export type Layout = "home" | "form" | "letter" | "loading1" | "login" | "signup" | "forgot" | "settings";
 
 export type Route = {
 	path: string;
@@ -17,6 +17,11 @@ export const routes: Route[] = [
 		layout: "home",
 	},
 	{
+		path: "/login",
+		component: () => import("$views/Login.svelte"),
+		layout: "login",
+	},
+	{
 		path: "/form",
 		component: () => import("$views/Form.svelte"),
 		layout: "form",
@@ -30,6 +35,21 @@ export const routes: Route[] = [
 		path: "/letter",
 		component: () => import("$views/Letter.svelte"),
 		layout: "letter",
+	},
+	{
+		path: "/signup",
+		component: () => import("$views/SignUp.svelte"),
+		layout: "signup",
+	},
+	{
+		path: "/forgot",
+		component: () => import("$views/Forgot.svelte"),
+		layout: "forgot",
+	},
+	{
+		path: "/settings",
+		component: () => import("$views/AccountSettings.svelte"),
+		layout: "settings",
 	},
 	{
 		path: "/404",

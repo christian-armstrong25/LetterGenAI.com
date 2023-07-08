@@ -1,14 +1,14 @@
 let storedController;
 
 function storeController(controller) {
-  storedController = controller;
+	storedController = controller;
 }
 
 function abortStoredController() {
-  if (storedController) {
-    storedController.abort();
-    storedController = null;
-  }
+	if (storedController) {
+		storedController.abort();
+		storedController = null;
+	}
 }
 
-export {storeController, abortStoredController};
+export { abortStoredController, storeController };

@@ -1,6 +1,11 @@
 <script>
 	import { abortStoredController, storeController } from "$/stores/controller";
 	import { coverLetter } from "$/stores/coverLetter";
+	import {
+		isSample,
+		writingSample1Text,
+		writingSample2Text,
+	} from "$/stores/samples";
 	import { onValue, ref, set } from "firebase/database";
 	import { LLMChain } from "langchain/chains";
 	import { ChatOpenAI } from "langchain/chat_models/openai";
@@ -13,32 +18,76 @@
 	import { navigate } from "svelte-navigator";
 	import { auth, database } from "../plugins/firebase/firebase";
 
-	let style;
-	let resume;
-	let resumeFileName = "";
-	let jobDescription = "";
+	let uploadedResumes = [];
+	let selectedResume = "";
+	let resumesData = {};
+
 	let additionalNotes = "";
-	let writingSample = "";
-	let writingSampleFileName = "";
-	let isSample = false;
+	let style = "";
+	let writingSample1Id = "";
+	let writingSample2Id = "";
+	let writingSamplesData = {};
+
+	let jobDescription = "";
+
 	const userID = auth.currentUser.uid;
 	const name = auth.currentUser.displayName;
 	let controller;
 
 	const handleSubmit = async (event) => {
 		event.preventDefault();
-		if (
-			(!isSample && !style) ||
-			(isSample && writingSample.trim() === "") ||
-			!resume ||
-			jobDescription.trim() === ""
-		) {
-			alert("Please fill out all fields.");
-		} else {
-			writeUserData();
-			coverLetter.set("");
-			generateCoverLetter();
+
+		const writingSample1Data = writingSamplesData[writingSample1Id];
+		const writingSample2Data = writingSamplesData[writingSample2Id];
+
+		console.log($isSample);
+
+		// check for style when it is not a sample
+		if (!$isSample && !style) {
+			alert("Please select a style.");
+			return; // exit from the function after alert
 		}
+
+		// check for writingSample1Data when it is a sample
+		if (
+			$isSample &&
+			(!writingSample1Data ||
+				!writingSample1Data.textContent ||
+				writingSample1Data.textContent.trim() === "")
+		) {
+			alert("Writing sample 1 is required.");
+			return; // exit from the function after alert
+		}
+
+		// check for selected resume
+		if (!selectedResume) {
+			alert("Please select a resume.");
+			return; // exit from the function after alert
+		}
+
+		// check for job description
+		if (!jobDescription || jobDescription.trim() === "") {
+			alert("Job description is required.");
+			return; // exit from the function after alert
+		}
+
+		// for sample checks for writingSample2Data
+		if ($isSample) {
+			if (
+				!writingSample2Data ||
+				!writingSample2Data.textContent ||
+				writingSample2Data.textContent.trim() === ""
+			) {
+				style = "sample-1";
+			} else {
+				style = "sample-2";
+			}
+		}
+
+		navigate("/loading1");
+		writeUserData();
+		coverLetter.set("");
+		await generateCoverLetter().then((letter) => reviewCoverLetter(letter));
 	};
 
 	onMount(() => {
@@ -46,15 +95,31 @@
 		onValue(
 			ref(database, "/users/" + userID),
 			(snapshot) => {
-				resume = snapshot.val() && snapshot.val().resume;
-				resumeFileName = snapshot.val() && snapshot.val().resumeFileName;
-				additionalNotes =
-					(snapshot.val() && snapshot.val().additionalNotes) || "";
-				style = snapshot.val() && snapshot.val().style;
-				writingSample = (snapshot.val() && snapshot.val().writingSample) || "";
-				writingSampleFileName =
-					snapshot.val() && snapshot.val().writingSampleFileName;
-				isSample = (snapshot.val() && snapshot.val().isSample) || false;
+				const userData = snapshot.val();
+
+				// Check if userData is not null
+				if (userData) {
+					selectedResume = userData.selectedResume || "";
+					uploadedResumes = Array.isArray(userData.uploadedResumes)
+						? userData.uploadedResumes
+						: [];
+					resumesData = userData.resumesData || {};
+					additionalNotes = userData.additionalNotes || "";
+					style = userData.style || "";
+					writingSample1Id = userData.writingSample1Id || "";
+					writingSample2Id = userData.writingSample2Id || "";
+					writingSamplesData = userData.writingSamplesData || {};
+					writingSample1Text.set(
+						writingSamplesData[writingSample1Id]?.textContent || ""
+					);
+					writingSample2Text.set(
+						writingSamplesData[writingSample2Id]?.textContent || ""
+					);
+					isSample.set(userData.isSample);
+				} else {
+					// Handle null userData here...
+					// You could set some defaults or show an error message to the user.
+				}
 			},
 			{
 				onlyOnce: true,
@@ -64,54 +129,76 @@
 
 	function writeUserData() {
 		set(ref(database, "users/" + userID), {
-			name: name,
+			selectedResume: selectedResume,
+			uploadedResumes: uploadedResumes,
+			resumesData: resumesData,
 			additionalNotes: additionalNotes,
 			style: style,
-			writingSample: writingSample,
-			isSample: isSample,
-			resume: resume,
-			resumeFileName: resumeFileName,
-			writingSampleFileName: writingSampleFileName,
+			writingSample1Id: writingSample1Id,
+			writingSample2Id: writingSample2Id,
+			writingSamplesData: writingSamplesData,
+			isSample: $isSample,
 			jobDescription: jobDescription,
+			name: name,
 		});
 	}
 
 	async function generateCoverLetter() {
 		const controller = new AbortController();
 		storeController(controller);
-		let prompt;
-		if (isSample) {
-			// writing sample
-			prompt = ChatPromptTemplate.fromPromptMessages([
-				HumanMessagePromptTemplate.fromTemplate(
-					"Welcome, Career Advisor! Today, we're pairing you with a student, {name}, who needs your expert touch to craft a stellar cover letter. This is more than just a task—it's a mission to present {name} as the ideal candidate for their dream role. We'll need to synthesize their resume, the job description, and their unique voice from a writing sample to tell a compelling story. Let's dive right in: \n\
-Here is {name}'s resume: ‘’’{resume}’’’ \n\
-Here is {name}’s writing sample: ‘’’{writingSample}’’’ \n\
-And the job description: ‘’’{jobDescription}’’’ \n\
-Step 1: Getting Personal: First impressions matter! Using {name}'s resume and job description as a guide, could you draft an engaging introduction that not only expresses their sincere interest in the role but also demonstrates their understanding of the company's mission, culture, or recent initiatives? \n\
-Step 2: Matching Skills: Let's align {name}'s qualifications and achievements with the job requirements. Highlight a project or experience where {name} used similar skills or faced similar challenges to what they'll encounter at the company. Be sure to provide quantifiable results to show the impact of their work. Also, let's emphasize how these experiences specifically prepare {name} for the role they are applying for. \n\
-Step 3: Demonstrating Potential: What makes {name} a great candidate? Elaborate on how their past experiences will contribute to the company and role. Be explicit—how exactly do {name}'s skills and achievements meet the company's needs? Also, let's weave in aspects of {name}'s personality and motivations that make them a cultural fit for the company. \n\
-Step 4: Wrapping Up: We're almost there! Let's write a closing paragraph expressing gratitude for the reader's time, {name}'s eagerness to discuss further in an interview, and their excitement about the unique contributions they can make to the company. \n\
-Step 5: Signing Off: And finally, let's bid them adieu with a 'Sincerely, {name}'. \n\
-Remember, {name} prefers their letter to be written in their own voice based on their writing sample. It's a challenging task, but we have faith in your skills to create a cover letter that is professional, engaging, and truly encapsulates {name}'s personality and potential. Notes: Do not label the steps you take, only show the end result, which should be a cover letter. Also, the greeting should just be 'Dear Hiring Manager,' {additionalNotes}"
-				),
-			]);
-		} else {
-			// default styles
-			prompt = ChatPromptTemplate.fromPromptMessages([
-				HumanMessagePromptTemplate.fromTemplate(
-					"Welcome, Career Advisor! Today, we're pairing you with a student, {name}, who needs your expert touch to craft a stellar cover letter. This is more than just a task—it's a mission to present {name} as the ideal candidate for their dream role. We'll need to synthesize their resume, the job description, and their unique voice to tell a compelling story. Let's dive right in: \n\
-				Here is {name}'s resume: ‘’’{resume}’’’ \n\
-And the job description: ‘’’{jobDescription}’’’ \n\
-Step 1: Getting Personal: First impressions matter! Using {name}'s resume and job description as a guide, could you draft an engaging introduction that not only expresses their sincere interest in the role but also demonstrates their understanding of the company's mission, culture, or recent initiatives? \n\
-Step 2: Matching Skills: Let's align {name}'s qualifications and achievements with the job requirements. Highlight a project or experience where {name} used similar skills or faced similar challenges to what they'll encounter at the company. Be sure to provide quantifiable results to show the impact of their work. Also, let's emphasize how these experiences specifically prepare {name} for the role they are applying for. \n\
-Step 3: Demonstrating Potential: What makes {name} a great candidate? Elaborate on how their past experiences will contribute to the company and role. Be explicit—how exactly do {name}'s skills and achievements meet the company's needs? Also, let's weave in aspects of {name}'s personality and motivations that make them a cultural fit for the company. \n\
-Step 4: Wrapping Up: We're almost there! Let's write a closing paragraph expressing gratitude for the reader's time, {name}'s eagerness to discuss further in an interview, and their excitement about the unique contributions they can make to the company. \n\
-Step 5: Signing Off: And finally, let's bid them adieu with a 'Sincerely, {name}'. \n\
-Remember, {name} prefers their letter to be written in a {style} style. It's a challenging task, but we have faith in your skills to create a cover letter that is professional, engaging, and truly encapsulates {name}'s personality and potential. Notes: Do not label the steps you take, only show the end result, which should be a cover letter. Also, the greeting should just be 'Dear Hiring Manager,' {additionalNotes}"
-				),
-			]);
+
+		const prompt = ChatPromptTemplate.fromPromptMessages([
+			HumanMessagePromptTemplate.fromTemplate(
+				"A good cover letter shows sincere enthusiasm, is personal, relevant to the job description, and professional. \n\
+				Here is a resume: ‘{resume}’ \n\
+				Here is a job description: ‘{jobDescription}’ \n\
+				Please develop a bullet point outline for a cover letter based on the resume and job description provided. \n\
+				Please write the cover letter based on the outline, drawing on the resume. ‘{style}’ \n\
+				Emphasize how I would contribute to the role based on the experiences on the resume. \n\
+				There should be a new line between each paragraph, the greeting should say 'Dear Hiring Manager,', and the sign off should say 'Sincerely, \n {name}' \n\
+				{additionalNotes}."
+			),
+		]);
+
+		const model = new ChatOpenAI({
+			openAIApiKey: import.meta.env.VITE_OPEN_AI_API_KEY,
+		});
+
+		const chain = new LLMChain({
+			llm: model,
+			prompt: prompt,
+		});
+
+		let response;
+
+		try {
+			response = await chain.call({
+				resume: resumesData[selectedResume].textContent,
+				jobDescription: jobDescription,
+				style: style,
+				additionalNotes: additionalNotes,
+				name: name,
+			});
+		} catch (e) {
+			if (e.name === "AbortError") {
+				console.log("Request was aborted");
+			} else {
+				console.log(e);
+			}
 		}
+
+		return response.text;
+	}
+
+	async function reviewCoverLetter(letter) {
+		const controller = new AbortController();
+		storeController(controller);
+
+		const prompt = ChatPromptTemplate.fromPromptMessages([
+			HumanMessagePromptTemplate.fromTemplate(
+				"You are a career advisor helping students write cover letters. You know that the great cover letters are simultaneously personal, show genuine enthusiasm, and are professional. A student gives you the following cover letter: '{letter}' Edit it to be more personal, more genuinely enthusiastic and human, but not unprofessional or informal. Here is the job description it is based on '{jobDescription}' and here is their resume: '{resume}'"
+			),
+		]);
 
 		const model = new ChatOpenAI({
 			openAIApiKey: import.meta.env.VITE_OPEN_AI_API_KEY,
@@ -128,13 +215,9 @@ Remember, {name} prefers their letter to be written in a {style} style. It's a c
 		try {
 			await chain.call(
 				{
+					letter: letter,
 					jobDescription: jobDescription,
-					resume: resume,
-					writingSample: writingSample,
-					style: style,
-					name: name,
-					additionalNotes: additionalNotes,
-					signal: controller.signal,
+					resume: resumesData[selectedResume].textContent,
 				},
 				[
 					{
@@ -151,6 +234,18 @@ Remember, {name} prefers their letter to be written in a {style} style. It's a c
 				console.log(e);
 			}
 		}
+	}
+
+	// Generate a new UUID
+	function uuidv4() {
+		return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
+			/[xy]/g,
+			function (c) {
+				let r = (Math.random() * 16) | 0,
+					v = c === "x" ? r : (r & 0x3) | 0x8;
+				return v.toString(16);
+			}
+		);
 	}
 
 	async function handleFileChange(event, target) {
@@ -174,131 +269,458 @@ Remember, {name} prefers their letter to be written in a {style} style. It's a c
 						}
 					}
 				}
+				const uploadedFile = {
+					fileName: file.name,
+					textContent: textContent,
+				};
+
 				if (target === "resume") {
-					resumeFileName = file.name;
-					resume = textContent;
-				} else if (target === "writingSample") {
-					writingSampleFileName = file.name;
-					writingSample = textContent;
+					const id = uuidv4();
+					uploadedResumes.push(id);
+					selectedResume = id;
+					resumesData[id] = uploadedFile;
+				} else if (target === "writingSample1") {
+					const id = uuidv4();
+					writingSample1Id = id;
+					$writingSample1Text = textContent; // use $ to notify Svelte
+					writingSamplesData[id] = {
+						fileName: file.name,
+						textContent: textContent,
+					};
+				} else if (target === "writingSample2") {
+					const id = uuidv4();
+					writingSample2Id = id;
+					$writingSample2Text = textContent; // use $ to notify Svelte
+					writingSamplesData[id] = {
+						fileName: file.name,
+						textContent: textContent,
+					};
 				}
 			}
 		};
 		reader.readAsArrayBuffer(file);
 	}
-
-	const toggleInputType = () => {
-		isSample = !isSample;
-	};
 </script>
 
-<div class="w-screen h-screen flex flex-col gap-4 items-center justify-center">
-	<form on:submit={handleSubmit} class="p-6 bg-gray-100 shadow-md rounded-md">
-		<div class="mb-4">
-			<h2 class="text-xl font-bold mb-2">Style</h2>
-			<p class="text-sm text-gray-600 mb-2">
+<div id="app">
+	<div class="form-container">
+		<h1>Create your Cover Letter</h1>
+
+		<div
+			class="section"
+			id="style-sect"
+			style="padding-top: {uploadedResumes[selectedResume]
+				? '0rem'
+				: '1rem'}; padding-bottom: {uploadedResumes[selectedResume]
+				? '1rem'
+				: '1.1rem'};"
+		>
+			<h2>Style<span class="required-star">*</span></h2>
+			<p id="choose">
 				Choose from a number of default writing styles, or imitate your own by
-				pasting in a past cover letter
+				pasting in cover letters or writing samples.
 			</p>
-			<div class="mb-2">
-				<button
-					type="button"
-					class="w-full px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-					on:click={toggleInputType}
-				>
-					{isSample ? "Default Styles" : "Select Writing Sample"}
-				</button>
-			</div>
-			{#if !isSample}
-				<select
-					bind:value={style}
-					class="w-full p-2 border border-gray-300 rounded"
-				>
-					<option disabled selected value> -- select an option -- </option>
-					<option>Very Formal</option>
-					<option>Enthusiastic and Passionate</option>
-					<option>Narrative-Oriented</option>
-					<option>Visionary</option>
-					<option>Precise and Qualification-Driven</option>
-				</select>
-			{:else}
-				<div class="mb-2">
-					<label
-						for="writing-upload"
-						class="relative inline-block cursor-pointer bg-blue-500 text-white px-4 py-1 rounded transition-colors duration-200 ease-in-out hover:bg-blue-600"
+			<div class="toggle-button">
+				{#each [1, 0] as index}
+					<button
+						on:click={() => {
+							if ($isSample !== index) isSample.set(index);
+						}}
+						style={`color: ${
+							$isSample === index ? "#004896" : "#848484"
+						}; border-color: ${
+							$isSample === index ? "#004896" : "#848484"
+						}; background-color: ${
+							$isSample === index ? "#DCEDFF" : "white"
+						}; font-weight: ${$isSample === index ? "bold" : "normal"}`}
 					>
-						Upload File
-						<input
-							id="writing-upload"
-							class="absolute top-0 left-0 w-0 h-0 overflow-hidden opacity-0"
-							type="file"
-							on:change={(e) => handleFileChange(e, "writingSample")}
+						{index === 0 ? "Pre-Selected Style" : "Personalized Style"}
+					</button>
+				{/each}
+			</div>
+			{#if $isSample}
+				<div class="double">
+					<div class="custom-style">
+						<div class="file-upload">
+							<button
+								on:click={() => document.getElementById("getFile1").click()}
+							>
+								<div class="logo-container">
+									<img src="/upload-icon.png" alt="Upload Icon" />
+								</div>
+								<div class="text-container" id="upload-1">
+									Upload Sample #1 PDF
+								</div>
+							</button>
+							<div class="uploaded">
+								{writingSamplesData[writingSample1Id]?.fileName || ""}
+							</div>
+							<input
+								type="file"
+								id="getFile1"
+								style="display:none"
+								on:change={(e) => handleFileChange(e, "writingSample1")}
+							/>
+						</div>
+						<p class="style-or">or</p>
+						<textarea
+							placeholder="Paste your first writing sample here"
+							class="sample-paste"
+							bind:value={$writingSample1Text}
 						/>
-					</label>
-					<div class="ml-4 text-gray-600 text-sm">
-						{writingSampleFileName || ""}
+					</div>
+
+					<div class="custom-style">
+						<div class="file-upload">
+							<button
+								on:click={() => document.getElementById("getFile2").click()}
+							>
+								<div class="logo-container">
+									<img src="public/upload-icon.png" alt="Upload Icon" />
+								</div>
+								<div class="text-container">Upload Sample #2 (Optional)</div>
+							</button>
+							<div class="uploaded">
+								{writingSamplesData[writingSample2Id]?.fileName || ""}
+							</div>
+							<input
+								type="file"
+								id="getFile2"
+								style="display:none"
+								on:change={(e) => handleFileChange(e, "writingSample2")}
+							/>
+						</div>
+						<p class="style-or">or</p>
+						<textarea
+							placeholder="Paste your second writing sample here (Optional)"
+							class="sample-paste"
+							bind:value={$writingSample2Text}
+						/>
 					</div>
 				</div>
-				<textarea
-					bind:value={writingSample}
-					placeholder="Or paste your writing sample here"
-					rows="3"
-					cols="50"
-					class="w-full p-2 border border-gray-300 rounded"
-				/>
+			{:else}
+				<div class="base-style">
+					<ul>
+						<li>
+							<label class="cursor">
+								<input
+									type="radio"
+									name="style"
+									value="precise"
+									checked={style === "precise"}
+									on:click={() => {
+										style = "precise";
+									}}
+								/>
+								Precise and Qualification-Driven
+							</label>
+						</li>
+					</ul>
+				</div>
 			{/if}
 		</div>
 
-		<div class="mb-4">
-			<h2 class="text-xl font-bold mb-2">Resume</h2>
-			<div class="flex items-center">
-				<label
-					for="resume-upload"
-					class="relative inline-block cursor-pointer bg-blue-500 text-white px-4 py-1 rounded transition-colors duration-200 ease-in-out hover:bg-blue-600"
+		<div class="section">
+			<h2>Resume<span class="required-star">*</span></h2>
+			{#if uploadedResumes.includes(selectedResume)}
+				<select bind:value={selectedResume}>
+					{#each uploadedResumes as resumeKey (resumeKey)}
+						<option value={resumeKey}>
+							{resumeKey === selectedResume
+								? `Selected: ${resumesData[resumeKey].fileName}`
+								: resumesData[resumeKey].fileName}
+						</option>
+					{/each}
+				</select>
+				<p class="style-or">or</p>
+			{/if}
+			<div
+				class="file-upload"
+				id="resume-upload"
+				style="display: flex; align-items: center;"
+			>
+				<button
+					on:click={() => document.getElementById("resumeUpload").click()}
 				>
-					Upload PDF
-					<input
-						id="resume-upload"
-						class="absolute top-0 left-0 w-0 h-0 overflow-hidden opacity-0"
-						type="file"
-						accept=".pdf"
-						on:change={(e) => handleFileChange(e, "resume")}
-					/>
-				</label>
-
-				<div class="ml-4 text-gray-600 text-sm">
-					{resumeFileName || ""}
-				</div>
+					<div class="logo-container">
+						<img src="public/upload-icon.png" alt="Upload Icon" />
+					</div>
+					<div class="text-container">Upload New PDF</div>
+				</button>
+				<input
+					type="file"
+					id="resumeUpload"
+					style="display:none"
+					on:change={(e) => handleFileChange(e, "resume")}
+				/>
 			</div>
 		</div>
 
-		<div class="mb-4">
-			<h2 class="text-xl font-bold mb-2">Job Description</h2>
+		<div
+			class="section"
+			style="padding-top: {uploadedResumes[selectedResume]
+				? '0rem'
+				: '0.5rem'}; padding-bottom: {uploadedResumes[selectedResume]
+				? '1rem'
+				: '1.1rem'};"
+		>
+			<h2>Job Description<span class="required-star">*</span></h2>
 			<textarea
 				bind:value={jobDescription}
 				placeholder="Paste the job description here"
-				rows="3"
-				cols="50"
-				class="w-full p-2 border border-gray-300 rounded"
 			/>
 		</div>
 
-		<div class="mb-4">
-			<h2 class="text-xl font-bold mb-2">Additional Notes</h2>
+		<div
+			class="section"
+			id="additional"
+			style="padding-top: {uploadedResumes[selectedResume]
+				? '0rem'
+				: '0.5rem'}; padding-bottom: {uploadedResumes[selectedResume]
+				? '1rem'
+				: '1.1rem'};"
+		>
+			<h2>Additional Notes (Optional)</h2>
+			<p id="additional-label">
+				Include any additional notes or ideas you want to highlight
+			</p>
 			<textarea
 				bind:value={additionalNotes}
-				placeholder="e.g. Highlight my data science skills and interest in public policy. Mention that I know John from IT."
-				rows="3"
-				cols="50"
-				class="w-full p-2 border border-gray-300 rounded"
+				placeholder="Any additional notes, e.g. “Highlight my data science skills and interest in public policy”"
 			/>
 		</div>
 
-		<div class="mb-4">
-			<button
-				type="submit"
-				class="w-full py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600"
-				>Submit
-			</button>
-		</div>
-	</form>
+		<button
+			class="generate-button"
+			on:click|stopPropagation={handleSubmit}
+			style="margin-top: {uploadedResumes[selectedResume] ? '0rem' : '1rem'};"
+			>Generate Letter</button
+		>
+	</div>
 </div>
+
+<img src="loading-resume.gif" id="loading-resume" alt="Loading resume" />
+
+<style>
+	#app {
+		background-color: #22385f;
+		font-family: "Roboto", sans-serif;
+		margin: 0;
+		padding: 0;
+		padding-top: 0.5rem;
+		width: 100vw;
+		height: 100vh;
+	}
+	.form-container {
+		background-color: white;
+		max-width: 43rem;
+		margin: 0rem auto;
+		padding: 2em;
+		padding-top: 0rem;
+		height: 93.5vh;
+		overflow: auto;
+	}
+	.form-container h1 {
+		font-size: 1.4rem;
+		text-align: center;
+		margin-bottom: 0;
+		padding-top: 0.7rem;
+		margin-top: 0;
+		padding-bottom: 0;
+	}
+	.section h2 {
+		font-size: 1.1rem;
+		color: #000;
+		margin-bottom: 0.5em;
+		margin-top: 0;
+	}
+	.section {
+		margin-bottom: 1rem;
+		padding: 1em;
+		margin-top: 0rem;
+		padding-top: 0rem;
+		border-radius: 5px;
+	}
+	.toggle-button button {
+		border: solid 1px;
+		padding: 0.2rem 1em;
+		border-radius: 0;
+		font-size: 0.9rem;
+		margin-top: 1rem;
+		margin-bottom: 0.5rem;
+		cursor: pointer;
+	}
+	.toggle-button button:first-child {
+		border-top-left-radius: 1rem;
+		border-bottom-left-radius: 1rem;
+	}
+	.toggle-button button:last-child {
+		border-top-right-radius: 1rem;
+		border-bottom-right-radius: 1rem;
+	}
+	.toggle-button {
+		display: flex;
+	}
+	.custom-style {
+		margin-top: 1rem;
+	}
+
+	.custom-style input[type="file"],
+	.custom-style textarea,
+	.base-style ul {
+		margin-top: 0em;
+	}
+	.base-style ul li {
+		list-style-type: none;
+	}
+	.generate-button {
+		background-color: #0c44a5;
+		color: white;
+		padding: 0.9em 2rem;
+		display: block;
+		margin: 0 auto;
+		border: none;
+		font-size: 0.9rem;
+		cursor: pointer;
+	}
+	select {
+		color: #125208;
+		border-color: #125208;
+		background-color: #f1fff4;
+		font-size: 0.8rem;
+		border: solid 0.1rem;
+		padding-top: 0.25rem;
+		padding-bottom: 0.25rem;
+	}
+	.required-star {
+		color: red;
+	}
+
+	p {
+		font-size: 0.79rem;
+	}
+
+	textarea {
+		font-size: 0.7rem;
+		font-family: "Roboto", sans-serif;
+		padding: 0.2rem;
+		width: 15rem;
+		height: 2rem;
+	}
+
+	#additional-label {
+		padding: 0;
+		margin: 0;
+		margin-bottom: 0.25rem;
+	}
+
+	.style-or {
+		padding-top: 0.5rem;
+		padding-bottom: 0.5rem;
+		margin: 0;
+		font-size: 0.65rem;
+	}
+
+	.sample-paste {
+		padding: 0.2rem;
+		margin: 0;
+		width: 12rem;
+		height: 2rem;
+	}
+
+	.file-upload button {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		width: 12.5rem;
+		height: 1.6rem;
+		font-size: 0.75rem;
+		border-radius: 0;
+		border: none;
+		cursor: pointer;
+		background-color: #d9d9d9;
+	}
+
+	.file-upload button img {
+		width: 1.2rem; /* Adjust this size according to the logo size you want */
+	}
+
+	.file-upload button .logo-container {
+		padding: 0rem;
+		margin-right: 0rem;
+		margin-left: 0;
+		padding-left: 0.2rem;
+	}
+
+	.file-upload button .text-container {
+		padding-right: 0rem;
+	}
+
+	#choose {
+		padding: 0;
+		margin: 0;
+	}
+
+	.double {
+		display: flex;
+		justify-content: space-between;
+		margin-right: 12rem;
+	}
+
+	#upload-1 {
+		padding-right: 2.3rem;
+	}
+
+	#style-sect {
+		padding-top: 1rem;
+	}
+
+	#resume-upload button {
+		width: 7rem;
+		padding-top: 0rem;
+		padding-bottom: 0rem;
+		font-size: 0.6rem;
+		height: 1.4rem;
+	}
+
+	#additional {
+		margin-bottom: 0.2rem;
+	}
+
+	li {
+		font-size: 0.9rem;
+		margin-right: 2rem;
+		padding-left: 0;
+		margin-left: 0;
+	}
+
+	ul {
+		padding-left: 0rem;
+		margin-left: 0;
+	}
+
+	.cursor {
+		cursor: pointer;
+	}
+
+	.uploaded {
+		font-size: 0.65rem;
+		padding-top: 0.2rem;
+	}
+
+	#uploaded_resume {
+		padding-left: 1rem;
+		padding-top: 0;
+		padding-bottom: 0;
+		margin-top: 0;
+		margin-bottom: 0;
+	}
+
+	#loading-resume {
+		width: 2rem;
+		position: absolute;
+		top: 51%;
+		left: 40%;
+		display: none;
+	}
+</style>
