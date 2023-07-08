@@ -51,9 +51,7 @@
 		// check for writingSample1Data when it is a sample
 		if (
 			$isSample &&
-			(!writingSample1Data ||
-				!writingSample1Data.textContent ||
-				writingSample1Data.textContent.trim() === "")
+			(!writingSample1Data || writingSample1Data.textContent.trim() === "")
 		) {
 			alert("Writing sample 1 is required.");
 			return; // exit from the function after alert
@@ -73,11 +71,7 @@
 
 		// for sample checks for writingSample2Data
 		if ($isSample) {
-			if (
-				!writingSample2Data ||
-				!writingSample2Data.textContent ||
-				writingSample2Data.textContent.trim() === ""
-			) {
+			if (!writingSample2Data || writingSample2Data.textContent.trim() === "") {
 				style = "sample-1";
 			} else {
 				style = "sample-2";
@@ -282,7 +276,6 @@
 				} else if (target === "writingSample1") {
 					const id = uuidv4();
 					writingSample1Id = id;
-					$writingSample1Text = textContent; // use $ to notify Svelte
 					writingSamplesData[id] = {
 						fileName: file.name,
 						textContent: textContent,
@@ -290,7 +283,6 @@
 				} else if (target === "writingSample2") {
 					const id = uuidv4();
 					writingSample2Id = id;
-					$writingSample2Text = textContent; // use $ to notify Svelte
 					writingSamplesData[id] = {
 						fileName: file.name,
 						textContent: textContent,
@@ -299,6 +291,28 @@
 			}
 		};
 		reader.readAsArrayBuffer(file);
+	}
+
+	async function handleTextInputChange(e, target) {
+		if (e.target instanceof HTMLTextAreaElement) {
+			const text = e.target.value;
+
+			if (target === "writingSample1") {
+				writingSample1Id = "Pasted Sample";
+				$writingSample1Text = text; // use $ to notify Svelte
+				writingSamplesData["Pasted Sample"] = {
+					fileName: "Pasted Sample",
+					textContent: text,
+				};
+			} else if (target === "writingSample2") {
+				writingSample2Id = "Pasted Sample";
+				$writingSample2Text = text; // use $ to notify Svelte
+				writingSamplesData["Pasted Sample"] = {
+					fileName: "Pasted Sample",
+					textContent: text,
+				};
+			}
+		}
 	}
 </script>
 
@@ -353,7 +367,11 @@
 								</div>
 							</button>
 							<div class="uploaded">
-								{writingSamplesData[writingSample1Id]?.fileName || ""}
+								{writingSamplesData[writingSample1Id] &&
+								writingSamplesData[writingSample1Id].fileName !==
+									"Pasted Sample"
+									? writingSamplesData[writingSample1Id].fileName
+									: ""}
 							</div>
 							<input
 								type="file"
@@ -367,6 +385,7 @@
 							placeholder="Paste your first writing sample here"
 							class="sample-paste"
 							bind:value={$writingSample1Text}
+							on:input={(e) => handleTextInputChange(e, "writingSample1")}
 						/>
 					</div>
 
@@ -381,8 +400,13 @@
 								<div class="text-container">Upload Sample #2 (Optional)</div>
 							</button>
 							<div class="uploaded">
-								{writingSamplesData[writingSample2Id]?.fileName || ""}
+								{writingSamplesData[writingSample2Id] &&
+								writingSamplesData[writingSample2Id].fileName !==
+									"Pasted Sample"
+									? writingSamplesData[writingSample2Id].fileName
+									: ""}
 							</div>
+
 							<input
 								type="file"
 								id="getFile2"
@@ -395,6 +419,7 @@
 							placeholder="Paste your second writing sample here (Optional)"
 							class="sample-paste"
 							bind:value={$writingSample2Text}
+							on:input={(e) => handleTextInputChange(e, "writingSample2")}
 						/>
 					</div>
 				</div>
