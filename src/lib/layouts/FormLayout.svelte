@@ -314,6 +314,25 @@
 			}
 		}
 	}
+
+	async function removeResume(id) {
+		const index = uploadedResumes.indexOf(id);
+		if (index > -1) {
+			// Remove from uploadedResumes
+			uploadedResumes.splice(index, 1);
+
+			// Remove from resumesData
+			delete resumesData[id];
+
+			// If the removed resume is the selected one, select another one or clear the selection
+			if (selectedResume === id) {
+				selectedResume = uploadedResumes[0] || "";
+			}
+
+			// Write updated data to the database
+			await writeUserData();
+		}
+	}
 </script>
 
 <div id="app">
@@ -448,17 +467,23 @@
 		<div class="section">
 			<h2>Resume<span class="required-star">*</span></h2>
 			{#if uploadedResumes.includes(selectedResume)}
-				<select bind:value={selectedResume}>
-					{#each uploadedResumes as resumeKey (resumeKey)}
-						<option value={resumeKey}>
-							{resumeKey === selectedResume
-								? `Selected: ${resumesData[resumeKey].fileName}`
-								: resumesData[resumeKey].fileName}
-						</option>
-					{/each}
-				</select>
-				<p class="style-or">or</p>
-			{/if}
+			<select bind:value={selectedResume}>
+				{#each uploadedResumes as resumeKey (resumeKey)}
+					<option value={resumeKey}>
+						{resumeKey === selectedResume
+							? `Selected: ${resumesData[resumeKey].fileName}`
+							: resumesData[resumeKey].fileName}
+					</option>
+				{/each}
+			</select>
+			<button 
+				on:click={() => removeResume(selectedResume)}
+				disabled={!selectedResume}
+			>
+				Remove Selected Resume
+			</button>
+			<p class="style-or">or</p>
+		{/if}
 			<div
 				class="file-upload"
 				id="resume-upload"
