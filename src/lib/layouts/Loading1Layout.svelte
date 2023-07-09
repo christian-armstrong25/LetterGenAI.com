@@ -4,7 +4,7 @@
 
 	let images = ["loading_1.gif", "loading_2.gif", "loading_3.gif"];
 	let currentImage = images[0];
-	let loadingTime = 15000; // Set your loading time here in milliseconds
+	let loadingTime = 6000; // Set your loading time here in milliseconds
 
 	let imageDurations = [
 		loadingTime * 0.25,

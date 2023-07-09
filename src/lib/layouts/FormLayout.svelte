@@ -81,6 +81,7 @@
 		navigate("/loading1");
 		writeUserData();
 		coverLetter.set("");
+
 		await generateCoverLetter().then((letter) => reviewCoverLetter(letter));
 	};
 
@@ -138,97 +139,143 @@
 	}
 
 	async function generateCoverLetter() {
-		const controller = new AbortController();
-		storeController(controller);
+	const controller = new AbortController();
+	storeController(controller);
+	let prompt;
 
-		const prompt = ChatPromptTemplate.fromPromptMessages([
-			HumanMessagePromptTemplate.fromTemplate(
-				"A good cover letter shows sincere enthusiasm, is personal, relevant to the job description, and professional. \n\
-				Here is a resume: ‘{resume}’ \n\
-				Here is a job description: ‘{jobDescription}’ \n\
-				Please develop a bullet point outline for a cover letter based on the resume and job description provided. \n\
-				Please write the cover letter based on the outline, drawing on the resume. ‘{style}’ \n\
-				Emphasize how I would contribute to the role based on the experiences on the resume. \n\
-				There should be a new line between each paragraph, the greeting should say 'Dear Hiring Manager,', and the sign off should say 'Sincerely, \n {name}' \n\
-				{additionalNotes}."
-			),
-		]);
 
-		const model = new ChatOpenAI({
-			openAIApiKey: import.meta.env.VITE_OPEN_AI_API_KEY,
+	if (style == "sample-1" || style == "sample-2") {
+		prompt = ChatPromptTemplate.fromPromptMessages([
+		HumanMessagePromptTemplate.fromTemplate(
+			"As a Career Advisor, you are tasked with constructing a powerful cover letter for a student, " + name + ". The goal is to seamlessly blend their resume, job description, and personal voice into a meaningful narrative that echoes with both sincerity and relevance." +
+			"Here is their resume: '" + resumesData[selectedResume]['textContent'] + "'" +
+			"And the job description: '" + jobDescription + "'" +
+			"Step 1: Introduction: Using " + name + "'s resume and job description, write an engaging introduction that shows their interest in the role, as well as their understanding of the company's mission or recent initiatives. Keep their enthusiasm for the role and alignment with their qualifications in focus." +
+			"Step 2: Interests and Skills: Align " + name + "'s qualifications with their interests and job requirements. Highlight a project or experience where " + name + " applied skills that satisfy the job's needs and also connect with their passions. Include quantifiable results to showcase the impact of their work and demonstrate how these experiences prepare " + name + " for this role." +
+			"Step 3: Potential: What sets " + name + " apart? Elucidate how their past experiences, fueled by their interests and qualifications, will bring substantial value to the company. Be specific—how will " + name + "'s skills, achievements, and interest in the field fulfill the company's needs? Incorporate elements of " + name + "'s personality and motivations that make them an excellent cultural fit for the company." +
+			"Step 4: Conclusion: Craft a closing paragraph that expresses gratitude for the reader's time, " + name + "'s desire to further discuss in an interview, and their excitement about the contributions they can make." +
+			"Step 5: Professional Sign-off: Conclude with 'Sincerely, " + name + "'." +
+			name + " would like their letter to be crafted in a qualification-focused style. This requires the ability to create a cover letter that is professional, engaging, and effectively encapsulates " + name + "'s qualifications, interests, and potential. The greeting should be 'Dear Hiring Manager,' '" + additionalNotes + "'"
+		),
+	]);
+} else if (style == "precise") {
+	prompt = ChatPromptTemplate.fromPromptMessages([
+		HumanMessagePromptTemplate.fromTemplate(
+			"As a Career Advisor, you are tasked with constructing a powerful cover letter for a student, " + name + ". The goal is to seamlessly blend their resume, job description, and personal voice into a meaningful narrative that echoes with both sincerity and relevance." +
+			"Here is their resume: '" + resumesData[selectedResume]['textContent'] + "'" +
+			"And the job description: '" + jobDescription + "'" +
+			"Step 1: Introduction: Using " + name + "'s resume and job description, write an engaging introduction that shows their interest in the role, as well as their understanding of the company's mission or recent initiatives. Keep their enthusiasm for the role and alignment with their qualifications in focus." +
+			"Step 2: Interests and Skills: Align " + name + "'s qualifications with their interests and job requirements. Highlight a project or experience where " + name + " applied skills that satisfy the job's needs and also connect with their passions. Include quantifiable results to showcase the impact of their work and demonstrate how these experiences prepare " + name + " for this role." +
+			"Step 3: Potential: What sets " + name + " apart? Elucidate how their past experiences, fueled by their interests and qualifications, will bring substantial value to the company. Be specific—how will " + name + "'s skills, achievements, and interest in the field fulfill the company's needs? Incorporate elements of " + name + "'s personality and motivations that make them an excellent cultural fit for the company." +
+			"Step 4: Conclusion: Craft a closing paragraph that expresses gratitude for the reader's time, " + name + "'s desire to further discuss in an interview, and their excitement about the contributions they can make." +
+			"Step 5: Professional Sign-off: Conclude with 'Sincerely, " + name + "'." +
+			name + " would like their letter to be crafted in a qualification-focused style. This requires the ability to create a cover letter that is professional, engaging, and effectively encapsulates " + name + "'s qualifications, interests, and potential. The greeting should be 'Dear Hiring Manager,' '" + additionalNotes + "'"
+		),
+	]);
+}
+
+
+	const model = new ChatOpenAI({
+		openAIApiKey: import.meta.env.VITE_OPEN_AI_API_KEY,
+	});
+
+	const chain = new LLMChain({
+		llm: model,
+		prompt: prompt,
+	});
+
+	let response;
+
+	try {
+		response = await chain.call({
+			resume: resumesData[selectedResume].textContent,
+			jobDescription: jobDescription,
+			style: style,
+			additionalNotes: additionalNotes,
+			name: name,
 		});
+	} catch (e) {
+		if (e.name === "AbortError") {
+			console.log("Request was aborted");
+		} else {
+			console.log(e);
+		}
+	}
 
-		const chain = new LLMChain({
-			llm: model,
-			prompt: prompt,
-		});
+	return response.text;
+}
 
-		let response;
 
-		try {
-			response = await chain.call({
-				resume: resumesData[selectedResume].textContent,
+async function reviewCoverLetter(letter) {
+	const controller = new AbortController();
+	storeController(controller);
+	console.log(letter)
+	let prompt;
+
+	if (style == "sample-1") {
+		let sample2 = "To whom it may concern," + "\n" +
+		"I’m writing to express my interest in the 2023 Associate Consultant Intern (ACI) position. I’m interested in this position because of the opportunity to create tangible impact working on a client-facing team, Bain’s tight-knit community driven by its local staffing model and groups like BGLAD and Asians at Bain, and the formative experience gained through Bain’s analytical yet collaborative problem-solving approach. I’m confident my past experiences have prepared me to be a valuable asset to the ACI program." + "\n" +
+		"Thank you," + "\n" +
+		"John Smith";
+
+		prompt = ChatPromptTemplate.fromPromptMessages([
+		HumanMessagePromptTemplate.fromTemplate(
+		"Your task is to revise the provided cover letter '" + letter + "' to match the writing style and tone of writing samples 1 and 2. Your response should clearly identify the key characteristics of the writing style and tone present in '" + writingSamplesData['writingSample1Id'] + "' and '" + sample2 + "'. You should strive to incorporate these characteristics into your revised cover letter without compromising the overall professionalism and clarity of the letter." +
+		"Please note that your revised cover letter should remain faithful to the original content and purpose of the letter, while also reflecting the requested writing style and tone. You should pay close attention to grammar, spelling, and punctuation, and ensure that the revised letter is free of errors. Please remove everything above the greeting, replace the greeting with 'Dear Hiring Manager', and replace everything below 'Sincerely' with '" + name + "' Ensure it keeps a professional, precise tone, and showcases qualifications accurately. Opt for clear, straightforward language, and focus on concrete descriptions and actions. Strive for direct communication without excessive praise or emotion. Include no text above Dear Hiring Manager."
+		),
+	]);	
+	} else if (style == "sample-2") {
+		prompt = ChatPromptTemplate.fromPromptMessages([
+		HumanMessagePromptTemplate.fromTemplate(
+		"Your task is to revise the provided cover letter '" + letter + "' to match the writing style and tone of writing samples 1 and 2. Your response should clearly identify the key characteristics of the writing style and tone present in '" + writingSamplesData['writingSample1Id'] + "' and '" + writingSamplesData['writingSample2Id'] + "'. You should strive to incorporate these characteristics into your revised cover letter without compromising the overall professionalism and clarity of the letter." +
+		"Please note that your revised cover letter should remain faithful to the original content and purpose of the letter, while also reflecting the requested writing style and tone. You should pay close attention to grammar, spelling, and punctuation, and ensure that the revised letter is free of errors. Please remove everything above the greeting, replace the greeting with 'Dear Hiring Manager', and replace everything below 'Sincerely' with '" + name + "' Ensure it keeps a professional, precise tone, and showcases qualifications accurately. Opt for clear, straightforward language, and focus on concrete descriptions and actions. Strive for direct communication without excessive praise or emotion. Include no text above Dear Hiring Manager."
+		),
+	]);	
+	} else if (style == "precise") {
+		prompt = ChatPromptTemplate.fromPromptMessages([
+		HumanMessagePromptTemplate.fromTemplate(
+		"You've received the cover letter: '" + letter + "'" +
+		"As a cover letter coach, your role is to revise this draft so that it presents " + name + " as genuinely interested in the company and the job role. Ensure it keeps a professional, precise tone, and showcases qualifications accurately. Opt for clear, straightforward language, and focus on concrete descriptions and actions. Strive for direct communication without excessive praise or emotion. Include no text above Dear Hiring Manager."
+		),
+	]);
+	} 
+
+	const model = new ChatOpenAI({
+		openAIApiKey: import.meta.env.VITE_OPEN_AI_API_KEY,
+		streaming: true,
+	});
+
+	const chain = new LLMChain({
+		llm: model,
+		prompt: prompt,
+	});
+
+	navigate("/letter");
+
+	try {
+		await chain.call(
+			{
+				letter: letter,
 				jobDescription: jobDescription,
-				style: style,
-				additionalNotes: additionalNotes,
-				name: name,
-			});
-		} catch (e) {
-			if (e.name === "AbortError") {
-				console.log("Request was aborted");
-			} else {
-				console.log(e);
-			}
-		}
-
-		return response.text;
-	}
-
-	async function reviewCoverLetter(letter) {
-		const controller = new AbortController();
-		storeController(controller);
-
-		const prompt = ChatPromptTemplate.fromPromptMessages([
-			HumanMessagePromptTemplate.fromTemplate(
-				"You are a career advisor helping students write cover letters. You know that the great cover letters are simultaneously personal, show genuine enthusiasm, and are professional. A student gives you the following cover letter: '{letter}' Edit it to be more personal, more genuinely enthusiastic and human, but not unprofessional or informal. Here is the job description it is based on '{jobDescription}' and here is their resume: '{resume}'"
-			),
-		]);
-
-		const model = new ChatOpenAI({
-			openAIApiKey: import.meta.env.VITE_OPEN_AI_API_KEY,
-			streaming: true,
-		});
-
-		const chain = new LLMChain({
-			llm: model,
-			prompt: prompt,
-		});
-
-		navigate("/letter");
-
-		try {
-			await chain.call(
+				resume: resumesData[selectedResume].textContent,
+			},
+			[
 				{
-					letter: letter,
-					jobDescription: jobDescription,
-					resume: resumesData[selectedResume].textContent,
-				},
-				[
-					{
-						handleLLMNewToken(token) {
-							coverLetter.update((letter) => letter + token);
-						},
+					handleLLMNewToken(token) {
+						coverLetter.update((letter) => letter + token);
 					},
-				]
-			);
-		} catch (e) {
-			if (e.name === "AbortError") {
-				console.log("Request was aborted");
-			} else {
-				console.log(e);
-			}
+				},
+			]
+		);
+	} catch (e) {
+		if (e.name === "AbortError") {
+			console.log("Request was aborted");
+		} else {
+			console.log(e);
 		}
 	}
+}
+
 
 	// Generate a new UUID
 	function uuidv4() {

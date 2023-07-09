@@ -230,11 +230,17 @@
 	}
 
 	#edit-letter {
-		color: white;
-		padding: 0;
-		margin: 0;
-		font-size: 0.95rem;
-	}
+  position: fixed;
+  bottom: 0.6rem;
+  left:-14rem;
+  color: white;
+  padding: 0;
+  margin: 0;
+  font-size: 0.95rem;
+  text-align: center;
+  width: 100%;
+  background: #22385f;
+}
 
 	.copy-tooltip {
 		position: fixed;
