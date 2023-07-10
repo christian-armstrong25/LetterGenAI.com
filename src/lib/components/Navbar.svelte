@@ -66,8 +66,7 @@
 			<div class="overlay {showOverlay ? 'show' : ''}" style="height: 5.75rem;">
 				<p
 					id="logged"
-					on:click={() => navigate("/settings")}
-					on:keydown={() => navigate("/settings")}
+
 				>
 					<img src="person.png" id="me" alt="User Avatar" />
 					{userEmail}
@@ -76,7 +75,7 @@
 					class="overlay-button"
 					on:click={() => navigate("/settings")}
 					on:keydown={() => navigate("/settings")}
-					style="border-top: 1px black solid;padding-top: 0.6rem;"
+					style="border-top: 1px black solid;padding-top: 0.75rem;"
 					>Account Settings</span
 				>
 				<span
@@ -146,7 +145,7 @@
 		background-color: white;
 		border: 1px solid #ddd;
 		padding: 10px;
-		width: 9rem;
+		width: 10rem;
 		z-index: 100;
 		font-size: 0.9rem;
 	}
@@ -159,7 +158,7 @@
 		display: block;
 		cursor: pointer;
 		margin-bottom: 10px;
-		border-top: 1px solid black; /* Add a thin black line */
+		border-top: none;
 		padding-top: 0.6rem;
 	}
 
@@ -169,11 +168,11 @@
 	}
 
 	#logged {
-		font-size: 0.6rem;
+		font-size: 0.52rem;
 		padding: 0;
 		margin: 0;
 		padding-bottom: 0.75rem;
-		cursor: pointer;
+		font-weight:normal;
 	}
 
 	#me {
@@ -183,6 +182,6 @@
 		height: auto;
 		margin: 0;
 		padding: 0;
-		cursor: pointer;
+		
 	}
 </style>
