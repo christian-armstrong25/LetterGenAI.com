@@ -43,7 +43,7 @@
 
 	function exportPDF() {
 		const element = document.createElement("div");
-		element.innerHTML = `<div style="font-family: 'Times New Roman', sans-serif; font-size: 14pt; color: black; padding: 72pt; line-height: 1.5;">${coverLetterValue}</div>`;
+		element.innerHTML = `<div style="font-family: 'Times New Roman', sans-serif; font-size: 14pt; color: black; padding: 72pt; line-height: 1.5;">${coverLetterHTML}</div>`;
 
 		html2pdf()
 			.set({ html2canvas: { scale: 4 } })
@@ -230,17 +230,17 @@
 	}
 
 	#edit-letter {
-  position: fixed;
-  bottom: 0.6rem;
-  left:-14rem;
-  color: white;
-  padding: 0;
-  margin: 0;
-  font-size: 0.95rem;
-  text-align: center;
-  width: 100%;
-  background: #22385f;
-}
+		position: fixed;
+		bottom: 0.6rem;
+		left: -14rem;
+		color: white;
+		padding: 0;
+		margin: 0;
+		font-size: 0.95rem;
+		text-align: center;
+		width: 100%;
+		background: #22385f;
+	}
 
 	.copy-tooltip {
 		position: fixed;
