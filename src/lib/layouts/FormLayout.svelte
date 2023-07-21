@@ -408,17 +408,13 @@
 				} else if (target === "writingSample1") {
 					const id = uuidv4();
 					writingSample1Id = id;
-					writingSamplesData[id] = {
-						fileName: file.name,
-						textContent: textContent,
-					};
+					writingSamplesData[id] = uploadedFile;
+					writingSample1Text.set(textContent);
 				} else if (target === "writingSample2") {
 					const id = uuidv4();
 					writingSample2Id = id;
-					writingSamplesData[id] = {
-						fileName: file.name,
-						textContent: textContent,
-					};
+					writingSamplesData[id] = uploadedFile;
+					writingSample2Text.set(textContent);
 				}
 			}
 		};
