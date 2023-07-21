@@ -391,7 +391,7 @@
 
 				// check if the textContent is empty
 				if (textContent.trim() === "") {
-					alert("Uploaded PDF is empty. Please upload a valid PDF.");
+					alert("Unable to read uploaded PDF. Please upload a valid PDF.");
 					return;
 				}
 
