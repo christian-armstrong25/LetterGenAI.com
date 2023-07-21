@@ -389,7 +389,6 @@
 					}
 				}
 
-				// check if the textContent is empty
 				if (textContent.trim() === "") {
 					alert("Unable to read uploaded PDF. Please upload a valid PDF.");
 					return;
