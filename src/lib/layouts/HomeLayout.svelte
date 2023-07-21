@@ -6,7 +6,6 @@
     let redirectTo = '/login';
     console.log($user)
   
-  // Use a reactive statement to update redirectTo based on the current user value
   $: {
       if ($user) {
           redirectTo = '/form';
