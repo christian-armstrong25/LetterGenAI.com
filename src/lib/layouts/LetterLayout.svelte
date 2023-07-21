@@ -43,7 +43,7 @@
 
 	function exportPDF() {
 		const element = document.createElement("div");
-		element.innerHTML = `<div style="font-family: 'Times New Roman', sans-serif; font-size: 14pt; color: black; padding: 72pt; line-height: 1.5;">${coverLetterHTML}</div>`;
+		element.innerHTML = `<div style="font-family: 'Times New Roman', sans-serif; font-size: 12pt; color: black; padding: 72pt; line-height: 1.15;">${coverLetterHTML}</div>`;
 
 		html2pdf()
 			.set({ html2canvas: { scale: 4 } })
