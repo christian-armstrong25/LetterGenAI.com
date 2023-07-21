@@ -19,4 +19,4 @@ const auth = getAuth(app);
 const database = getDatabase(app);
 const analytics = getAnalytics(app);
 
-export { app, auth, database };
+export { analytics, app, auth, database };
