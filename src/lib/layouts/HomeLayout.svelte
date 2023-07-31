@@ -114,6 +114,10 @@
     margin-top:5rem;
 }
 
+#generate:hover {
+font-weight:bold;
+	}
+
 .right {
     flex: 1.4; /* takes up 2 portions of space */
     display: flex;

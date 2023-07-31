@@ -163,6 +163,7 @@
 	}
 
 	.coverLetter {
+		position: relative;
 		width: 33rem;
 		height: 37rem;
 		margin-left: 4rem;
@@ -184,6 +185,17 @@
 		padding-bottom: 3.5rem;
 		font-family: "Times New Roman", Times, serif;
 		font-weight: normal;
+	}
+
+	#edit-letter {
+		position: absolute;
+		bottom: -3.5rem;
+		width: 100%;
+		padding: 0.5rem;
+		color: white;
+		text-align: center;
+		background: #22385f;
+		font-size: 0.95rem;
 	}
 
 	.right {
@@ -227,19 +239,6 @@
 		width: 2rem;
 		height: auto;
 		margin-right: 0.5em;
-	}
-
-	#edit-letter {
-		position: fixed;
-		bottom: 0.6rem;
-		left: -14rem;
-		color: white;
-		padding: 0;
-		margin: 0;
-		font-size: 0.95rem;
-		text-align: center;
-		width: 100%;
-		background: #22385f;
 	}
 
 	.copy-tooltip {

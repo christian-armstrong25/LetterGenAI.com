@@ -50,12 +50,21 @@
 	$: userEmail = $user?.email || null;
 </script>
 
+
 <nav>
 	<div class="nav-left" on:click={goToHome} on:keydown={handleKeyPress}>
 		<img src="/LetterGen.svg" alt="LetterGen Logo" id="logo" />
 		<h1>LetterGenAI</h1>
 	</div>
 	<div class="nav-right">
+
+		<a href="https://forms.gle/11Ue2xTiMroTy5YY6" target="_blank">
+	<button
+		id="feedback-button"
+		>Send Feedback</button
+	>
+</a>
+
 		<button
 			id="account"
 			on:click={handleAccountClick}
@@ -63,10 +72,9 @@
 			>{userEmail ? "My Account" : "Sign In"}</button
 		>
 		{#if userEmail}
-			<div class="overlay {showOverlay ? 'show' : ''}" style="height: 5.75rem;">
+			<div class="overlay {showOverlay ? 'show' : ''}" style="height: 6.75rem;">
 				<p
 					id="logged"
-
 				>
 					<img src="person.png" id="me" alt="User Avatar" />
 					{userEmail}
@@ -88,6 +96,7 @@
 		{/if}
 	</div>
 </nav>
+
 
 <style>
 	nav {
@@ -123,6 +132,34 @@
 		margin-right: 10px;
 	}
 
+		#feedback-button {
+		border: 0.2rem solid #0c44a5; /* Bigger stroke */
+		border-radius: 0.4rem;
+		background-color: transparent;
+		color: #0c44a5;
+		padding-left: 2.5rem;
+		padding-right: 2.5rem;
+		padding-top: 0.5rem;
+		padding-bottom: 0.5rem;
+		font-size: 1rem;
+		font-weight: 500;
+		cursor: pointer;
+		margin: 0;
+		margin-right: 0.5rem;
+	}
+
+		#feedback-button:hover {
+		background-color: #0c44a5; /* Change background on hover */
+		color: white; /* Change text color on hover */
+	}
+
+	#account:hover {
+		background-color: #0c44a5; /* Change background on hover */
+		color: white; /* Change text color on hover */
+	}
+
+
+
 	#account {
 		border: 0.2rem solid #0c44a5; /* Bigger stroke */
 		border-radius: 0.4rem;
@@ -139,16 +176,19 @@
 		margin-right: 0.5rem;
 	}
 
-	.overlay {
-		display: none;
-		position: absolute;
-		background-color: white;
-		border: 1px solid #ddd;
-		padding: 10px;
-		width: 10rem;
-		z-index: 100;
-		font-size: 0.9rem;
-	}
+.overlay {
+	display: none;
+	position: absolute;
+	background-color: white;
+	border: 1px solid #ddd;
+	padding: 10px;
+	width: 10rem;
+	z-index: 100;
+	font-size: 0.9rem;
+	top: 3.4rem; /* Adjust this */
+	right: 0.3rem; /* Adjust this */
+}
+
 
 	.overlay.show {
 		display: block;
