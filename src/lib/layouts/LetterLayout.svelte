@@ -257,4 +257,90 @@
 		visibility: visible;
 		opacity: 1;
 	}
+
+	@media only screen and (max-width: 1099px) {
+		#cover-letter-text {
+		text-align: left;
+		padding-left: 3.7rem;
+		padding-right: 4.2rem;
+		padding-top: 2rem;
+		padding-bottom: 3.5rem;
+		font-family: "Times New Roman", Times, serif;
+		font-weight: normal;
+		font-size:0.55rem;
+	}
+}
+
+	@media only screen and (max-width: 999px) {
+		#cover-letter-text {
+		text-align: left;
+		padding-left: 3.7rem;
+		padding-right: 4.2rem;
+		padding-top: 2rem;
+		padding-bottom: 3.5rem;
+		font-family: "Times New Roman", Times, serif;
+		font-weight: normal;
+		font-size:0.5rem;
+	}
+	}
+
+	@media only screen and (max-height: 700px) {
+		#cover-letter-text {
+		text-align: left;
+		padding-left: 3.7rem;
+		padding-right: 4.2rem;
+		padding-top: 2rem;
+		padding-bottom: 3.5rem;
+		font-family: "Times New Roman", Times, serif;
+		font-weight: normal;
+		font-size:0.55rem;
+	}
+
+	.coverLetter {
+		position: relative;
+		width: 32rem;
+		height: 34rem;
+		margin-left: 4rem;
+		margin-right: 5rem;
+		padding: 0rem;
+		margin-top: 0rem;
+		margin-bottom: 6rem;
+		background-color: white;
+		color: black;
+		font-size: 0.63rem;
+		text-align: center;
+	}
+
+	}
+
+	@media only screen and (max-height: 650px) {
+		#cover-letter-text {
+		text-align: left;
+		padding-left: 3.7rem;
+		padding-right: 4.2rem;
+		padding-top: 2rem;
+		padding-bottom: 3.5rem;
+		font-family: "Times New Roman", Times, serif;
+		font-weight: normal;
+		font-size:0.5rem;
+	}
+
+	.coverLetter {
+		position: relative;
+		width: 28rem;
+		height: 30rem;
+		margin-left: 4rem;
+		margin-right: 5rem;
+		padding: 0rem;
+		margin-top: 0rem;
+		margin-bottom: 6rem;
+		background-color: white;
+		color: black;
+		font-size: 0.63rem;
+		text-align: center;
+	}
+
+	}
+
+
 </style>

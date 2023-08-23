@@ -47,8 +47,6 @@
 </script>
 
 <style>
-
-
 .content {
     background-color: #F5F5F5;
     margin: 0; /* remove default margin */
