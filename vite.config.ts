@@ -1,3 +1,4 @@
+// filepath: /Users/christianarmstrong/Desktop/CS/side-projects/LetterGen/vite.config.ts
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import * as path from "path";
 import { defineConfig } from "vite";
@@ -16,7 +17,10 @@ export default defineConfig({
 	},
 	build: {
 		rollupOptions: {
-			external: ["/__/firebase/9.22.2/firebase-app-compat.js"],
+			external: [
+				"/__/firebase/9.22.2/firebase-app-compat.js",
+				"pdfjs-dist/build/pdf.worker.entry",
+			],
 		},
 	},
 });

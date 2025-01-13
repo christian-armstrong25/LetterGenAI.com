@@ -10,7 +10,6 @@
 	let user;
 	let firstName = "";
 	let lastName = "";
-
 	onMount(async () => {
 		user = await getUserData();
 		console.log(user?.displayName);
