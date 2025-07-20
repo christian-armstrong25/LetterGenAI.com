@@ -1,95 +1,65 @@
-# Svelte + TS + Tailwind + Firebase Auth
+# LetterGen - AI Cover Letter Generator
 
-## How to use it?
+<div align="center">
 
-### 1. Clone repository
+![LetterGen Logo](public/LetterGen.ico)
+
+Generate personalized cover letters in seconds using AI. Upload your resume, add a job description, and get a professional cover letter tailored to your style.
+
+</div>
+
+## Features
+
+- 🤖 **AI-Powered**: Uses OpenAI to generate professional cover letters
+- 📝 **Personalized**: Upload writing samples to match your voice
+- 📄 **Multiple Formats**: Export as PDF, Word doc, or copy to clipboard
+- 🔐 **Secure**: Firebase authentication and cloud storage
+- 📱 **Responsive**: Works on desktop and mobile
+
+## Quick Start
+
+1. **Clone & Install**
 
 ```bash
-git clone git@github.com:neiwad/svelte-tailwind-firebase.git
-```
-
-### 2. Install dependencies
-
-```bash
+git clone https://github.com/yourusername/LetterGen.git
+cd LetterGen
 pnpm install
 ```
 
-### 3. Run project
+2. **Set up Environment**
+   Create a `.env` file:
+
+```env
+VITE_FB_API_KEY=your_firebase_api_key
+VITE_FB_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FB_PROJECT_ID=your_project_id
+VITE_FB_STORAGE_BUCKET=your_project.appspot.com
+VITE_FB_MESSAGING_SENDER_ID=your_sender_id
+VITE_FB_APP_ID=your_app_id
+VITE_OPENAI_API_KEY=your_openai_api_key
+```
+
+3. **Run**
 
 ```bash
 pnpm run dev
 ```
 
-At this point you will have a Firebase error saying that credentials are missing. It's ok, in the next step we will create a Firebase project.
+## Tech Stack
 
-## Create a Firebase project
+- **Frontend**: Svelte + TypeScript + Tailwind CSS
+- **Backend**: Firebase (Auth + Database)
+- **AI**: OpenAI GPT-4 + LangChain
+- **Build**: Vite
 
-### 1. Open the Firebase console
+## How It Works
 
-[Firebase Console](https://console.firebase.google.com/)
+1. Sign up/login with Firebase
+2. Upload your resume (PDF)
+3. Choose writing style or upload samples
+4. Paste job description
+5. Generate and export your cover letter
 
-### 2. Create a project
+## License
 
-Just follow steps, you can disable Google Analytics as we don't need it.
-
-### 3. Get project credentials
-
-On the overview page, you will see an iOs, an Android and a Web buttons just under the title.
-
-- Click on the web button.
-- Name your application as you want.
-- Don't need to check Hosting.
-- Then you will see your credentials like that
-
-```javascript
-const firebaseConfig = {
-  apiKey: ******,
-  authDomain: ******,
-  projectId: ******,
-  storageBucket: ******,
-  messagingSenderId: ******,
-  appId: ******,
-};
-```
-
-### 4. Add credentials to your app
-
-Inside your root folder, create a **.env** file and then add your credentials like that:
-
-```javascript
-VITE_FB_AUTH_DOMAIN = ******
-VITE_FB_PROJECT_ID = ******
-VITE_FB_STORAGE_BUCKET = ******
-VITE_FB_MESSAGING_SENDER_ID = ******
-VITE_FB_APP_ID = ******
-```
-
-### 5. Reload your dev server
-
-Some times Vite auto-reload dev server with new .env file, but you can just kill your dev server and then re do
-
-```bash
-pnpm run dev
-```
-
-## Bonus
-
-### 1. Google oAuth on custom domain
-
-If you deploy this app on a web server, as vercel or netflix or whatever, you need to do an extra step for the Google oAuth to works.
-
-Go to [Firebase Google oAuth Settings](https://console.firebase.google.com/u/3/project/svelte-tailwind-firebase-9ff6a/authentication/settings)
-
-Then **Allowed Domains** and add your web app's domain.
-
-### 2. Vercel.json
-
-In order to makes the web app to works on a Vercel environment, I have to add a vercel.json inside the root folder. You can remove it if you don't use Vercel.
-
-## Enjoy
-
-If you have some questions, you can contact me at **hello@neiwad.dev**.
-
-If you want to improve this starter, feel free to [create a PR](https://github.com/neiwad/svelte-tailwind-firebase/pulls)
-
-If you have issues, feel free to [create an issue](https://github.com/neiwad/svelte-tailwind-firebase/issues)
+MIT License
