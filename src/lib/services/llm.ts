@@ -10,7 +10,7 @@ import { STYLES } from "../utils/constants";
 export function createLLMChain(promptTemplate: any, streaming = false) {
 	const model = new ChatOpenAI({
 		openAIApiKey: import.meta.env.VITE_OPEN_AI_API_KEY,
-		modelName: "gpt-4o-mini",
+		modelName: "gpt-4.1-nano",
 		streaming,
 	});
 	return new LLMChain({ llm: model, prompt: promptTemplate });
@@ -106,14 +106,11 @@ export async function reviewCoverLetter(
 	]);
 
 	const chain = createLLMChain(promptTemplate, true);
-	await chain.call(
-		{ letter },
-		[
-			{
-				handleLLMNewToken(token) {
-					onToken(token);
-				},
+	await chain.call({ letter }, [
+		{
+			handleLLMNewToken(token) {
+				onToken(token);
 			},
-		]
-	);
+		},
+	]);
 }
