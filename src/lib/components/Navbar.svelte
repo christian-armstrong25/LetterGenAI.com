@@ -26,39 +26,20 @@
 		navigate("/"); // Navigate to home
 	}
 
-	// handleKeyPress function
-	function handleKeyPress(event) {
-		if (event.key === "Enter") {
-			goToHome();
-		}
-	}
-
-	// handleAccountKeyPress function
-	function handleAccountKeyPress(event) {
-		if (event.key === "Enter") {
-			handleAccountClick();
-		}
-	}
-
-	// handleLogoutKeyPress function
-	function handleLogoutKeyPress(event) {
-		if (event.key === "Enter") {
-			handleLogout();
-		}
-	}
+	import { handleEnterKey } from "../utils/keyboard";
 
 	$: userEmail = $user?.email || null;
 </script>
 
 
 <nav>
-	<div class="nav-left" on:click={goToHome} on:keydown={handleKeyPress}>
+	<div class="nav-left" on:click={goToHome} on:keydown={handleEnterKey(goToHome)}>
 		<img src="/LetterGen.svg" alt="LetterGen Logo" id="logo" />
 		<h1>LetterGenAI</h1>
 	</div>
 	<div class="nav-right">
 
-		<a href="https://forms.gle/11Ue2xTiMroTy5YY6" target="_blank">
+		<a href="https://forms.gle/oasanaZiXbMdfXc18" target="_blank">
 	<button
 		id="feedback-button"
 		>Send Feedback</button
@@ -68,7 +49,7 @@
 		<button
 			id="account"
 			on:click={handleAccountClick}
-			on:keydown={handleAccountKeyPress}
+			on:keydown={handleEnterKey(handleAccountClick)}
 			>{userEmail ? "My Account" : "Sign In"}</button
 		>
 		{#if userEmail}
@@ -90,7 +71,7 @@
 					id="btn2"
 					class="overlay-button"
 					on:click={handleLogout}
-					on:keydown={handleLogoutKeyPress}>Log Out</span
+					on:keydown={handleEnterKey(handleLogout)}>Log Out</span
 				>
 			</div>
 		{/if}
@@ -222,6 +203,6 @@
 		height: auto;
 		margin: 0;
 		padding: 0;
-		
+
 	}
 </style>

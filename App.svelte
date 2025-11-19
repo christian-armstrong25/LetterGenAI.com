@@ -1,47 +1,49 @@
 <script lang="ts">
 	import Links from "$/components/Links.svelte";
-	import ForgotLayout from "$/layouts/ForgotLayout.svelte";
-	import Loading1Layout from "$/layouts/Loading1Layout.svelte";
-	import LoginLayout from "$/layouts/LoginLayout.svelte";
-	import SignUpLayout from "$/layouts/SignUpLayout.svelte";
 	import RouteChangeHandler from "$/router/RouteChangeHandler.svelte";
 	import type { Layout } from "$/router/router";
 	import { currentRoute, routes } from "$/router/router";
 	import { user } from "$/stores/user";
-	import Signout from "$/views/Signout.svelte";
 	import { auth } from "$plugins/firebase/firebase";
 	import { onAuthStateChanged } from "firebase/auth";
 	import { onMount } from "svelte";
 	import { Route, Router } from "svelte-navigator";
 	import AccountSettingsLayout from "./src/lib/layouts/AccountSettingsLayout.svelte";
 	import FormLayout from "./src/lib/layouts/FormLayout.svelte";
+	import ForgotLayout from "./src/lib/layouts/ForgotLayout.svelte";
 	import HomeLayout from "./src/lib/layouts/HomeLayout.svelte";
 	import LetterLayout from "./src/lib/layouts/LetterLayout.svelte";
+	import Loading1Layout from "./src/lib/layouts/Loading1Layout.svelte";
+	import LoginLayout from "./src/lib/layouts/LoginLayout.svelte";
+	import SignUpLayout from "./src/lib/layouts/SignUpLayout.svelte";
 	import LazyRoute from "./src/lib/router/LazyRoute.svelte";
+	import Signout from "./src/lib/views/Signout.svelte";
 
-	let ready: boolean = false;
-
-	/* LAYOUT MANAGEMENT */
+	let ready = false;
 	let currentLayout: Layout;
-	currentRoute.subscribe(($currentRoute) => {
-		if (!$currentRoute) return;
-		currentLayout = $currentRoute.layout;
-	});
 
-	/* AUTH MANAGEMENT */
-	const authSubscriber = () => {
-		onAuthStateChanged(auth, async (userAuthData) => {
-			if (userAuthData) {
-				user.set(userAuthData);
-			} else {
-				user.set(null);
-			}
-			ready = true;
-		});
+	const layoutComponents: Record<Layout, any> = {
+		home: HomeLayout,
+		form: FormLayout,
+		letter: LetterLayout,
+		loading1: Loading1Layout,
+		login: LoginLayout,
+		signup: SignUpLayout,
+		forgot: ForgotLayout,
+		settings: AccountSettingsLayout,
 	};
 
-	onMount(async () => {
-		authSubscriber();
+	currentRoute.subscribe(($currentRoute) => {
+		if ($currentRoute) {
+			currentLayout = $currentRoute.layout;
+		}
+	});
+
+	onMount(() => {
+		onAuthStateChanged(auth, (userAuthData) => {
+			user.set(userAuthData);
+			ready = true;
+		});
 	});
 </script>
 
@@ -55,54 +57,12 @@
 			<Route path="signout">
 				<Signout />
 			</Route>
-			{#if currentLayout === "home"}
-				<HomeLayout>
-					{#each routes.filter((r) => r.layout === "home") as route}
+			{#if currentLayout && layoutComponents[currentLayout]}
+				<svelte:component this={layoutComponents[currentLayout]}>
+					{#each routes.filter((r) => r.layout === currentLayout) as route}
 						<LazyRoute component={route.component} path={route.path} />
 					{/each}
-				</HomeLayout>
-			{:else if currentLayout === "form"}
-				<FormLayout>
-					{#each routes.filter((r) => r.layout === "form") as route}
-						<LazyRoute component={route.component} path={route.path} />
-					{/each}
-				</FormLayout>
-			{:else if currentLayout === "loading1"}
-				<Loading1Layout>
-					{#each routes.filter((r) => r.layout === "loading1") as route}
-						<LazyRoute component={route.component} path={route.path} />
-					{/each}
-				</Loading1Layout>
-			{:else if currentLayout === "settings"}
-				<AccountSettingsLayout>
-					{#each routes.filter((r) => r.layout === "settings") as route}
-						<LazyRoute component={route.component} path={route.path} />
-					{/each}
-				</AccountSettingsLayout>
-			{:else if currentLayout === "login"}
-				<LoginLayout>
-					{#each routes.filter((r) => r.layout === "login") as route}
-						<LazyRoute component={route.component} path={route.path} />
-					{/each}
-				</LoginLayout>
-			{:else if currentLayout === "signup"}
-				<SignUpLayout>
-					{#each routes.filter((r) => r.layout === "signup") as route}
-						<LazyRoute component={route.component} path={route.path} />
-					{/each}
-				</SignUpLayout>
-			{:else if currentLayout === "forgot"}
-				<ForgotLayout>
-					{#each routes.filter((r) => r.layout === "forgot") as route}
-						<LazyRoute component={route.component} path={route.path} />
-					{/each}
-				</ForgotLayout>
-			{:else if currentLayout === "letter"}
-				<LetterLayout>
-					{#each routes.filter((r) => r.layout === "letter") as route}
-						<LazyRoute component={route.component} path={route.path} />
-					{/each}
-				</LetterLayout>
+				</svelte:component>
 			{/if}
 		</Router>
 	</main>

@@ -13,7 +13,11 @@ export default defineConfig({
 			$plugins: path.resolve(__dirname, "./src/lib/plugins"),
 			$stores: path.resolve(__dirname, "./src/lib/stores"),
 			$components: path.resolve(__dirname, "./src/lib/components"),
+			"pdfjs-dist/build/pdf.worker.entry.js": "pdfjs-dist/build/pdf.worker.js",
 		},
+	},
+	optimizeDeps: {
+		exclude: ["pdfjs-dist"],
 	},
 	build: {
 		rollupOptions: {

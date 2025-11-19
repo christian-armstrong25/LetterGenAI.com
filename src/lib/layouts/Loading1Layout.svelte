@@ -2,15 +2,10 @@
 	import { onMount } from "svelte";
 	import Navbar from "../components/Navbar.svelte";
 
-	let images = ["loading_1.gif", "loading_2.gif", "loading_3.gif"];
-	let currentImage = images[0];
-	let loadingTime = 6000; // Set your loading time here in milliseconds
+	import { LOADING_DURATIONS, LOADING_IMAGES, LOADING_TIME } from "../utils/constants";
 
-	let imageDurations = [
-		loadingTime * 0.25,
-		loadingTime * 0.35,
-		loadingTime * 0.4,
-	];
+	let currentImage = LOADING_IMAGES[0];
+	const imageDurations = LOADING_DURATIONS.map((ratio) => LOADING_TIME * ratio);
 
 	onMount(() => {
 		cycleImages();
@@ -20,12 +15,12 @@
 		let imageIndex = 0;
 		const interval = setInterval(() => {
 			imageIndex++;
-			if (imageIndex >= images.length) {
+			if (imageIndex >= LOADING_IMAGES.length) {
 				clearInterval(interval);
 			} else {
-				currentImage = images[imageIndex];
+				currentImage = LOADING_IMAGES[imageIndex];
 			}
-		}, imageDurations[imageIndex]);
+		}, imageDurations[imageIndex - 1] || 0);
 	}
 </script>
 

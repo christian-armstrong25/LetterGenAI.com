@@ -1,11 +1,9 @@
 <script>
-	import docxtemplater from "docxtemplater";
-	import { saveAs } from "file-saver";
-	import html2pdf from "html2pdf.js";
-	import PizZip from "pizzip";
-	import { navigate } from "svelte-navigator";
 	import Navbar from "../components/Navbar.svelte";
+	import { navigate } from "svelte-navigator";
 	import { coverLetter } from "../stores/coverLetter";
+	import { convertHTMLToText, convertTextToHTML, copyToClipboard, exportDoc, exportPDF } from "../utils/export";
+	import { handleEnterKey } from "../utils/keyboard";
 
 	let coverLetterValue = "";
 	let editableDiv;
@@ -15,86 +13,43 @@
 		navigate("/form");
 	}
 
-	function handleKeyDown(event) {
-		if (event.key === "Enter" || event.key === " ") {
-			exportPDF();
-		}
-	}
-
 	let coverLetterHTML = "";
 	let coverLetterText = "";
+	let isCopied = false;
+	let cursorPosition = { x: 0, y: 0 };
 
 	coverLetter.subscribe((value) => {
 		coverLetterText = value;
-		coverLetterHTML = value
-			.replace(/\n/g, "<br>")
-			.replace(/^ +/gm, (match) => match.replace(/ /g, "&nbsp;"));
+		coverLetterHTML = convertTextToHTML(value);
 		if (editableDiv) {
 			editableDiv.innerHTML = coverLetterHTML;
 		}
 	});
 
 	function updateCoverLetter() {
-		const content = editableDiv.innerHTML
-			.replace(/<br>/g, "\n")
-			.replace(/&nbsp;/g, " ");
-		coverLetter.set(content);
+		coverLetter.set(convertHTMLToText(editableDiv.innerHTML));
 	}
 
-	function exportPDF() {
-		const element = document.createElement("div");
-		element.innerHTML = `<div style="font-family: 'Times New Roman', sans-serif; font-size: 12pt; color: black; padding: 72pt; line-height: 1.15;">${coverLetterHTML}</div>`;
-
-		html2pdf()
-			.set({ html2canvas: { scale: 4 } })
-			.from(element)
-			.save("coverLetter.pdf");
+	function handleExportPDF() {
+		exportPDF(coverLetterHTML);
 	}
 
-	async function loadFile(url) {
-		const response = await fetch(url);
-		if (!response.ok) {
-			throw new Error("HTTP error, status = " + response.status);
-		}
-		return await response.arrayBuffer();
-	}
-
-	async function exportDoc() {
+	async function handleExportDoc() {
 		try {
-			const content = await loadFile("/template.docx");
-			const zip = new PizZip(content);
-			const doc = new docxtemplater().loadZip(zip);
-			doc.setData({ content: coverLetterText });
-			doc.render();
-			const out = doc.getZip().generate({
-				type: "blob",
-				mimeType:
-					"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-			});
-			saveAs(out, `MyString.docx`);
+			await exportDoc(coverLetterText);
 		} catch (error) {
-			let e = {
-				message: error.message,
-				name: error.name,
-				stack: error.stack,
-				properties: error.properties,
-			};
-			console.log(JSON.stringify({ error: e }));
-			throw error;
+			console.error("Error exporting DOC:", error);
 		}
 	}
-
-	let isCopied = false;
-	let cursorPosition = { x: 0, y: 0 }; // default cursor position
 
 	function showCopyTooltip(e) {
-		cursorPosition = { x: e.clientX, y: e.clientY }; // capture cursor position
+		cursorPosition = { x: e.clientX, y: e.clientY };
 		isCopied = true;
-		setTimeout(() => (isCopied = false), 500); // Disappear after 2 seconds
+		setTimeout(() => (isCopied = false), 500);
 	}
 
-	function copyToClipboard(e) {
-		navigator.clipboard.writeText(coverLetterText);
+	async function handleCopyToClipboard(e) {
+		await copyToClipboard(coverLetterText);
 		showCopyTooltip(e);
 	}
 </script>
@@ -119,20 +74,20 @@
 			<img
 				src="/pdf_export.png"
 				alt="PDF Export"
-				on:click={exportPDF}
-				on:keydown={handleKeyDown}
+				on:click={handleExportPDF}
+				on:keydown={handleEnterKey(handleExportPDF)}
 			/>
 			<img
 				src="/doc_export.png"
 				alt="DOC Export"
-				on:click={exportDoc}
-				on:keydown={handleKeyDown}
+				on:click={handleExportDoc}
+				on:keydown={handleEnterKey(handleExportDoc)}
 			/>
 			<img
 				src="/copy_export.png"
 				alt="Copy Export"
-				on:click={copyToClipboard}
-				on:keydown={handleKeyDown}
+				on:click={handleCopyToClipboard}
+				on:keydown={handleEnterKey(() => handleCopyToClipboard({ clientX: 0, clientY: 0 }))}
 			/>
 		</div>
 
@@ -260,86 +215,34 @@
 
 	@media only screen and (max-width: 1099px) {
 		#cover-letter-text {
-		text-align: left;
-		padding-left: 3.7rem;
-		padding-right: 4.2rem;
-		padding-top: 2rem;
-		padding-bottom: 3.5rem;
-		font-family: "Times New Roman", Times, serif;
-		font-weight: normal;
-		font-size:0.55rem;
+			font-size: 0.55rem;
+		}
 	}
-}
 
 	@media only screen and (max-width: 999px) {
 		#cover-letter-text {
-		text-align: left;
-		padding-left: 3.7rem;
-		padding-right: 4.2rem;
-		padding-top: 2rem;
-		padding-bottom: 3.5rem;
-		font-family: "Times New Roman", Times, serif;
-		font-weight: normal;
-		font-size:0.5rem;
-	}
+			font-size: 0.5rem;
+		}
 	}
 
 	@media only screen and (max-height: 700px) {
 		#cover-letter-text {
-		text-align: left;
-		padding-left: 3.7rem;
-		padding-right: 4.2rem;
-		padding-top: 2rem;
-		padding-bottom: 3.5rem;
-		font-family: "Times New Roman", Times, serif;
-		font-weight: normal;
-		font-size:0.55rem;
-	}
-
-	.coverLetter {
-		position: relative;
-		width: 32rem;
-		height: 34rem;
-		margin-left: 4rem;
-		margin-right: 5rem;
-		padding: 0rem;
-		margin-top: 0rem;
-		margin-bottom: 6rem;
-		background-color: white;
-		color: black;
-		font-size: 0.63rem;
-		text-align: center;
-	}
-
+			font-size: 0.55rem;
+		}
+		.coverLetter {
+			width: 32rem;
+			height: 34rem;
+		}
 	}
 
 	@media only screen and (max-height: 650px) {
 		#cover-letter-text {
-		text-align: left;
-		padding-left: 3.7rem;
-		padding-right: 4.2rem;
-		padding-top: 2rem;
-		padding-bottom: 3.5rem;
-		font-family: "Times New Roman", Times, serif;
-		font-weight: normal;
-		font-size:0.5rem;
-	}
-
-	.coverLetter {
-		position: relative;
-		width: 28rem;
-		height: 30rem;
-		margin-left: 4rem;
-		margin-right: 5rem;
-		padding: 0rem;
-		margin-top: 0rem;
-		margin-bottom: 6rem;
-		background-color: white;
-		color: black;
-		font-size: 0.63rem;
-		text-align: center;
-	}
-
+			font-size: 0.5rem;
+		}
+		.coverLetter {
+			width: 28rem;
+			height: 30rem;
+		}
 	}
 
 

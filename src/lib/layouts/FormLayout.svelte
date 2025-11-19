@@ -1,4 +1,11 @@
 <script>
+	import FileUpload from "$/components/FileUpload.svelte";
+	import { pdfWorkerUrl } from "$/pdfWorkerSetup";
+	import { loadUserData, saveUserData } from "$/services/firebase";
+	import {
+		generateCoverLetter as generateLLM,
+		reviewCoverLetter as reviewLLM,
+	} from "$/services/llm";
 	import { abortStoredController, storeController } from "$/stores/controller";
 	import { coverLetter } from "$/stores/coverLetter";
 	import {
@@ -6,457 +13,207 @@
 		writingSample1Text,
 		writingSample2Text,
 	} from "$/stores/samples";
-	import { onValue, ref, set } from "firebase/database";
-	import { LLMChain } from "langchain/chains";
-	import { ChatOpenAI } from "langchain/chat_models/openai";
-	import {
-		ChatPromptTemplate,
-		HumanMessagePromptTemplate,
-		PromptTemplate,
-	} from "langchain/prompts";
+	import { PASTED_SAMPLE_ID, STYLES } from "$/utils/constants";
+	import { extractTextFromPDF, validatePDFFile } from "$/utils/pdf";
+	import { uuidv4 } from "$/utils/uuid";
+	import { determineStyle, validateForm } from "$/utils/validation";
+	import { auth } from "$plugins/firebase/firebase";
 	import * as pdfjsLib from "pdfjs-dist";
 	import { onMount } from "svelte";
 	import { navigate } from "svelte-navigator";
-	import { auth, database } from "../plugins/firebase/firebase";
 
-	// Set the worker source URL manually
-	pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+	pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
+	// State
 	let uploadedResumes = [];
 	let selectedResume = "";
 	let resumesData = {};
-
 	let additionalNotes = "";
 	let style = "";
 	let writingSample1Id = "";
 	let writingSample2Id = "";
 	let writingSamplesData = {};
-
 	let jobDescription = "";
 
-	let userID;
-	let name;
-
-	// Check if a user is authenticated
+	// Auth
 	const isAuthenticated = auth.currentUser !== null;
-
-	if (isAuthenticated) {
-		userID = auth.currentUser.uid;
-		name = auth.currentUser.displayName;
-	}
-
-	let controller;
+	const userID = isAuthenticated ? auth.currentUser.uid : null;
+	const name = isAuthenticated ? auth.currentUser.displayName : "";
 
 	const handleSubmit = async (event) => {
 		event.preventDefault();
-
-		const writingSample1Data = writingSamplesData[writingSample1Id];
-		const writingSample2Data = writingSamplesData[writingSample2Id];
-
-		console.log($isSample);
-
-		// check for style when it is not a sample
-		if (!$isSample && !style) {
-			alert("Please select a style.");
-			return; // exit from the function after alert
+		const isSampleMode = $isSample === 1;
+		const validation = validateForm(
+			isSampleMode,
+			style,
+			writingSamplesData,
+			writingSample1Id,
+			selectedResume,
+			jobDescription
+		);
+		if (!validation.valid) {
+			alert(validation.message);
+			return;
 		}
 
-		// check for writingSample1Data when it is a sample
-		if (
-			$isSample &&
-			(!writingSample1Data || writingSample1Data.textContent.trim() === "")
-		) {
-			alert("Writing sample 1 is required.");
-			return; // exit from the function after alert
-		}
-
-		// check for selected resume
-		if (!selectedResume) {
-			alert("Please select a resume.");
-			return; // exit from the function after alert
-		}
-
-		// check for job description
-		if (!jobDescription || jobDescription.trim() === "") {
-			alert("Job description is required.");
-			return; // exit from the function after alert
-		}
-
-		// for sample checks for writingSample2Data
-		if ($isSample) {
-			if (!writingSample2Data || writingSample2Data.textContent.trim() === "") {
-				style = "sample-1";
-			} else {
-				style = "sample-2";
-			}
-		}
-
+		style =
+			determineStyle(isSampleMode, writingSamplesData, writingSample2Id) ||
+			style;
 		navigate("/loading1");
 		writeUserData();
 		coverLetter.set("");
 
-		await generateCoverLetter().then((letter) => reviewCoverLetter(letter));
+		const letter = await generateCoverLetter();
+		await reviewCoverLetter(letter);
 	};
 
 	onMount(() => {
 		abortStoredController();
-		if (isAuthenticated) {
-			onValue(
-				ref(database, "/users/" + userID),
-				(snapshot) => {
-					const userData = snapshot.val();
+		if (!isAuthenticated) return;
 
-					// Check if userData is not null
-					if (userData) {
-						selectedResume = userData.selectedResume || "";
-						uploadedResumes = Array.isArray(userData.uploadedResumes)
-							? userData.uploadedResumes
-							: [];
-						resumesData = userData.resumesData || {};
-						additionalNotes = userData.additionalNotes || "";
-						style = userData.style || "";
-						writingSample1Id = userData.writingSample1Id || "";
-						writingSample2Id = userData.writingSample2Id || "";
-						writingSamplesData = userData.writingSamplesData || {};
-						writingSample1Text.set(
-							writingSamplesData[writingSample1Id]?.textContent || ""
-						);
-						writingSample2Text.set(
-							writingSamplesData[writingSample2Id]?.textContent || ""
-						);
-						isSample.set(userData.isSample);
-					}
-				},
-				{
-					onlyOnce: true,
-				}
+		loadUserData(userID, (userData) => {
+			selectedResume = userData.selectedResume || "";
+			uploadedResumes = Array.isArray(userData.uploadedResumes)
+				? userData.uploadedResumes
+				: [];
+			resumesData = userData.resumesData || {};
+			additionalNotes = userData.additionalNotes || "";
+			style = userData.style || "";
+			writingSample1Id = userData.writingSample1Id || "";
+			writingSample2Id = userData.writingSample2Id || "";
+			writingSamplesData = userData.writingSamplesData || {};
+			writingSample1Text.set(
+				writingSamplesData[writingSample1Id]?.textContent || ""
 			);
-		}
+			writingSample2Text.set(
+				writingSamplesData[writingSample2Id]?.textContent || ""
+			);
+			isSample.set(userData.isSample);
+		});
 	});
 
 	function writeUserData() {
-		if (isAuthenticated) {
-			set(ref(database, "users/" + userID), {
-				selectedResume: selectedResume,
-				uploadedResumes: uploadedResumes,
-				resumesData: resumesData,
-				additionalNotes: additionalNotes,
-				style: style,
-				writingSample1Id: writingSample1Id,
-				writingSample2Id: writingSample2Id,
-				writingSamplesData: writingSamplesData,
-				isSample: $isSample,
-				jobDescription: jobDescription,
-				name: name,
-			});
-		}
+		if (!isAuthenticated) return;
+		saveUserData(userID, {
+			selectedResume,
+			uploadedResumes,
+			resumesData,
+			additionalNotes,
+			style,
+			writingSample1Id,
+			writingSample2Id,
+			writingSamplesData,
+			isSample: $isSample,
+			jobDescription,
+			name,
+		});
 	}
 
 	async function generateCoverLetter() {
-		const controller = new AbortController();
-		storeController(controller);
-		let promptTemplate;
-
-		if (style == "sample-1" || style == "sample-2") {
-			promptTemplate = PromptTemplate.fromTemplate(
-				"As a Career Advisor, you are tasked with constructing a powerful cover letter for a student, " +
-					name +
-					". The goal is to seamlessly blend their resume, job description, and personal voice into a meaningful narrative that echoes with both sincerity and relevance." +
-					"Here is their resume: '{resume}'" +
-					"And the job description: '{jobDescription}'" +
-					"Step 1: Introduction: Using " +
-					name +
-					"'s resume and job description, write an engaging introduction that shows their interest in the role, as well as their understanding of the company's mission or recent initiatives. Keep their enthusiasm for the role and alignment with their qualifications in focus." +
-					"Step 2: Interests and Skills: Align " +
-					name +
-					"'s qualifications with their interests and job requirements. Highlight a project or experience where " +
-					name +
-					" applied skills that satisfy the job's needs and also connect with their passions. Include quantifiable results to showcase the impact of their work and demonstrate how these experiences prepare " +
-					name +
-					" for this role." +
-					"Step 3: Potential: What sets " +
-					name +
-					" apart? Elucidate how their past experiences, fueled by their interests and qualifications, will bring substantial value to the company. Be specific—how will " +
-					name +
-					"'s skills, achievements, and interest in the field fulfill the company's needs? Incorporate elements of " +
-					name +
-					"'s personality and motivations that make them an excellent cultural fit for the company." +
-					"Step 4: Conclusion: Craft a closing paragraph that expresses gratitude for the reader's time, " +
-					name +
-					"'s desire to further discuss in an interview, and their excitement about the contributions they can make." +
-					"Step 5: Professional Sign-off: Conclude with 'Sincerely, " +
-					name +
-					"'." +
-					name +
-					" would like their letter to be crafted in a qualification-focused style. This requires the ability to create a cover letter that is professional, engaging, and effectively encapsulates " +
-					name +
-					"'s qualifications, interests, and potential. The greeting should be 'Dear Hiring Manager,' " +
-					"'{additionalNotes}'"
-			);
-		} else if (style == "precise") {
-			promptTemplate = PromptTemplate.fromTemplate(
-				"As a Career Advisor, you are tasked with constructing a powerful cover letter for a student, " +
-					name +
-					". The goal is to seamlessly blend their resume, job description, and personal voice into a meaningful narrative that echoes with both sincerity and relevance." +
-					"Here is their resume: '{resume}'" +
-					"And the job description: '{jobDescription}'" +
-					"Step 1: Introduction: Using " +
-					name +
-					"'s resume and job description, write an engaging introduction that shows their interest in the role, as well as their understanding of the company's mission or recent initiatives. Keep their enthusiasm for the role and alignment with their qualifications in focus." +
-					"Step 2: Interests and Skills: Align " +
-					name +
-					"'s qualifications with their interests and job requirements. Highlight a project or experience where " +
-					name +
-					" applied skills that satisfy the job's needs and also connect with their passions. Include quantifiable results to showcase the impact of their work and demonstrate how these experiences prepare " +
-					name +
-					" for this role." +
-					"Step 3: Potential: What sets " +
-					name +
-					" apart? Elucidate how their past experiences, fueled by their interests and qualifications, will bring substantial value to the company. Be specific—how will " +
-					name +
-					"'s skills, achievements, and interest in the field fulfill the company's needs? Incorporate elements of " +
-					name +
-					"'s personality and motivations that make them an excellent cultural fit for the company." +
-					"Step 4: Conclusion: Craft a closing paragraph that expresses gratitude for the reader's time, " +
-					name +
-					"'s desire to further discuss in an interview, and their excitement about the contributions they can make." +
-					"Step 5: Professional Sign-off: Conclude with 'Sincerely, " +
-					name +
-					"'." +
-					name +
-					" would like their letter to be crafted in a qualification-focused style. This requires the ability to create a cover letter that is professional, engaging, and effectively encapsulates " +
-					name +
-					"'s qualifications, interests, and potential. The greeting should be 'Dear Hiring Manager,' " +
-					"'{additionalNotes}'"
-			);
-		}
-
-		const prompt = ChatPromptTemplate.fromPromptMessages([
-			HumanMessagePromptTemplate.fromTemplate(
-				await promptTemplate.format({
-					resume: resumesData[selectedResume].textContent,
-					jobDescription: jobDescription,
-					additionalNotes: additionalNotes,
-					name: name,
-				})
-			),
-		]);
-
-		const model = new ChatOpenAI({
-			openAIApiKey: import.meta.env.VITE_OPEN_AI_API_KEY,
-			modelName: "gpt-4o-mini",
-		});
-
-		const chain = new LLMChain({
-			llm: model,
-			prompt: prompt,
-		});
-
-		let response;
-
+		storeController(new AbortController());
 		try {
-			response = await chain.call({
-				resume: resumesData[selectedResume].textContent,
-				jobDescription: jobDescription,
-				style: style,
-				additionalNotes: additionalNotes,
-				name: name,
-			});
+			return await generateLLM(
+				resumesData[selectedResume].textContent,
+				jobDescription,
+				additionalNotes,
+				name
+			);
 		} catch (e) {
-			if (e.name === "AbortError") {
-				console.log("Request was aborted");
-			} else {
-				console.log(e);
-			}
+			if (e.name !== "AbortError") console.log(e);
+			throw e;
 		}
-
-		return response.text;
 	}
 
 	async function reviewCoverLetter(letter) {
-		const controller = new AbortController();
-		storeController(controller);
-		console.log(letter);
-		let promptTemplate;
-
-		if (style == "sample-1") {
-			// ... (other code related to sample-1)
-			promptTemplate = PromptTemplate.fromTemplate(
-				"Your task is to revise the provided cover letter '{letter}' to match the writing style and tone of writing samples 1 and 2. Your response should clearly identify the key characteristics of the writing style and tone present in '" +
-					writingSamplesData["writingSample1Id"] +
-					"' and '" +
-					sample2 +
-					"'. You should strive to incorporate these characteristics into your revised cover letter without compromising the overall professionalism and clarity of the letter." +
-					"Please note that your revised cover letter should remain faithful to the original content and purpose of the letter, while also reflecting the requested writing style and tone. You should pay close attention to grammar, spelling, and punctuation, and ensure that the revised letter is free of errors. Please remove everything above the greeting, replace the greeting with 'Dear Hiring Manager', and replace everything below 'Sincerely' with '" +
-					name +
-					"' Ensure it keeps a professional, precise tone, and showcases qualifications accurately. Opt for clear, straightforward language, and focus on concrete descriptions and actions. Strive for direct communication without excessive praise or emotion. Include no text above Dear Hiring Manager."
-			);
-		} else if (style == "sample-2") {
-			promptTemplate = PromptTemplate.fromTemplate(
-				"Your task is to revise the provided cover letter '{letter}' to match the writing style and tone of writing samples 1 and 2. Your response should clearly identify the key characteristics of the writing style and tone present in '" +
-					writingSamplesData["writingSample1Id"] +
-					"' and '" +
-					writingSamplesData["writingSample2Id"] +
-					"'. You should strive to incorporate these characteristics into your revised cover letter without compromising the overall professionalism and clarity of the letter." +
-					"Please note that your revised cover letter should remain faithful to the original content and purpose of the letter, while also reflecting the requested writing style and tone. You should pay close attention to grammar, spelling, and punctuation, and ensure that the revised letter is free of errors. Please remove everything above the greeting, replace the greeting with 'Dear Hiring Manager', and replace everything below 'Sincerely' with '" +
-					name +
-					"' Ensure it keeps a professional, precise tone, and showcases qualifications accurately. Opt for clear, straightforward language, and focus on concrete descriptions and actions. Strive for direct communication without excessive praise or emotion. Include no text above Dear Hiring Manager."
-			);
-		} else if (style == "precise") {
-			promptTemplate = PromptTemplate.fromTemplate(
-				"You've received the cover letter: '{letter}'" +
-					"As a cover letter coach, your role is to revise this draft so that it presents " +
-					name +
-					" as genuinely interested in the company and the job role. Ensure it keeps a professional, precise tone, and showcases qualifications accurately. Opt for clear, straightforward language, and focus on concrete descriptions and actions. Strive for direct communication without excessive praise or emotion. Include no text above Dear Hiring Manager."
-			);
-		}
-
-		const prompt = ChatPromptTemplate.fromPromptMessages([
-			HumanMessagePromptTemplate.fromTemplate(
-				await promptTemplate.format({
-					letter: letter,
-					jobDescription: jobDescription,
-					resume: resumesData[selectedResume].textContent,
-					name: name,
-				})
-			),
-		]);
-
-		const model = new ChatOpenAI({
-			openAIApiKey: import.meta.env.VITE_OPEN_AI_API_KEY,
-			modelName: "gpt-4o-mini",
-			streaming: true,
-		});
-
-		const chain = new LLMChain({
-			llm: model,
-			prompt: prompt,
-		});
-
+		storeController(new AbortController());
 		navigate("/letter");
-
 		try {
-			await chain.call(
-				{
-					letter: letter,
-					jobDescription: jobDescription,
-					resume: resumesData[selectedResume].textContent,
-				},
-				[
-					{
-						handleLLMNewToken(token) {
-							coverLetter.update((letter) => letter + token);
-						},
-					},
-				]
+			await reviewLLM(
+				letter,
+				style,
+				name,
+				writingSamplesData,
+				writingSample1Id,
+				writingSample2Id,
+				(token) => coverLetter.update((l) => l + token)
 			);
 		} catch (e) {
-			if (e.name === "AbortError") {
-				console.log("Request was aborted");
-			} else {
-				console.log(e);
-			}
+			if (e.name !== "AbortError") console.log(e);
 		}
-	}
-
-	// Generate a new UUID
-	function uuidv4() {
-		return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
-			/[xy]/g,
-			function (c) {
-				let r = (Math.random() * 16) | 0,
-					v = c === "x" ? r : (r & 0x3) | 0x8;
-				return v.toString(16);
-			}
-		);
 	}
 
 	async function handleFileChange(event, target) {
-		const file = event.target.files[0];
-		const reader = new FileReader();
-		reader.onload = async function () {
-			if (reader.result instanceof ArrayBuffer) {
-				const typedarray = new Uint8Array(reader.result);
-				const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
-				let textContent = "";
-				for (let i = 1; i <= pdf.numPages; i++) {
-					const page = await pdf.getPage(i);
-					const content = await page.getTextContent();
-					for (const item of content.items) {
-						if (typeof item.str === "string") {
-							textContent += item.str;
-						}
-					}
-				}
+		const file = event.target?.files?.[0];
+		if (!file) return;
 
-				if (textContent.trim() === "") {
-					alert("Unable to read uploaded PDF. Please upload a valid PDF.");
-					return;
-				}
+		if (!validatePDFFile(file)) {
+			alert("Please upload a PDF file.");
+			return;
+		}
 
-				const uploadedFile = {
-					fileName: file.name,
-					textContent: textContent,
-				};
-
-				if (target === "resume") {
-					const id = uuidv4();
-					uploadedResumes.push(id);
-					selectedResume = id;
-					resumesData[id] = uploadedFile;
-				} else if (target === "writingSample1") {
-					const id = uuidv4();
-					writingSample1Id = id;
-					writingSamplesData[id] = uploadedFile;
-					writingSample1Text.set(textContent);
-				} else if (target === "writingSample2") {
-					const id = uuidv4();
-					writingSample2Id = id;
-					writingSamplesData[id] = uploadedFile;
-					writingSample2Text.set(textContent);
-				}
+		try {
+			const textContent = await extractTextFromPDF(file);
+			if (!textContent) {
+				alert("Unable to read uploaded PDF. Please upload a valid PDF.");
+				return;
 			}
-		};
-		reader.readAsArrayBuffer(file);
-	}
 
-	async function handleTextInputChange(e, target) {
-		if (e.target instanceof HTMLTextAreaElement) {
-			const text = e.target.value;
+			const uploadedFile = { fileName: file.name, textContent };
+			const id = uuidv4();
 
-			if (target === "writingSample1") {
-				writingSample1Id = "Pasted Sample";
-				$writingSample1Text = text; // use $ to notify Svelte
-				writingSamplesData["Pasted Sample"] = {
-					fileName: "Pasted Sample",
-					textContent: text,
-				};
+			if (target === "resume") {
+				uploadedResumes.push(id);
+				selectedResume = id;
+				resumesData[id] = uploadedFile;
+			} else if (target === "writingSample1") {
+				writingSample1Id = id;
+				writingSamplesData[id] = uploadedFile;
+				writingSample1Text.set(textContent);
 			} else if (target === "writingSample2") {
-				writingSample2Id = "Pasted Sample";
-				$writingSample2Text = text; // use $ to notify Svelte
-				writingSamplesData["Pasted Sample"] = {
-					fileName: "Pasted Sample",
-					textContent: text,
-				};
+				writingSample2Id = id;
+				writingSamplesData[id] = uploadedFile;
+				writingSample2Text.set(textContent);
 			}
+		} catch (error) {
+			console.error("Error processing PDF:", error);
+			alert("Error reading PDF file. Please try again.");
 		}
 	}
 
-	async function removeResume(id) {
+	function handleTextInputChange(e, target) {
+		if (!(e.target instanceof HTMLTextAreaElement)) return;
+
+		const text = e.target.value;
+		const sampleData = { fileName: PASTED_SAMPLE_ID, textContent: text };
+
+		if (target === "writingSample1") {
+			writingSample1Id = PASTED_SAMPLE_ID;
+			writingSample1Text.set(text);
+			writingSamplesData[PASTED_SAMPLE_ID] = sampleData;
+		} else if (target === "writingSample2") {
+			writingSample2Id = PASTED_SAMPLE_ID;
+			writingSample2Text.set(text);
+			writingSamplesData[PASTED_SAMPLE_ID] = sampleData;
+		}
+	}
+
+	function removeResume(id) {
 		const index = uploadedResumes.indexOf(id);
-		if (index > -1) {
-			// Remove from uploadedResumes
-			uploadedResumes.splice(index, 1);
+		if (index === -1) return;
 
-			// Remove from resumesData
-			delete resumesData[id];
-
-			// If the removed resume is the selected one, select another one or clear the selection
-			if (selectedResume === id) {
-				selectedResume = uploadedResumes[0] || "";
-			}
+		uploadedResumes.splice(index, 1);
+		delete resumesData[id];
+		if (selectedResume === id) {
+			selectedResume = uploadedResumes[0] || "";
 		}
 	}
+
+	// Computed values
+	$: hasSelectedResume = uploadedResumes.includes(selectedResume);
+	$: sectionPadding = hasSelectedResume ? "0rem" : "1rem";
+	$: sectionPaddingBottom = hasSelectedResume ? "1rem" : "1.1rem";
+	$: isPastedSample = (id) =>
+		writingSamplesData[id]?.fileName === PASTED_SAMPLE_ID;
 </script>
 
 <div id="app">
@@ -466,11 +223,7 @@
 		<div
 			class="section"
 			id="style-sect"
-			style="padding-top: {uploadedResumes[selectedResume]
-				? '0rem'
-				: '1rem'}; padding-bottom: {uploadedResumes[selectedResume]
-				? '1rem'
-				: '1.1rem'};"
+			style="padding-top: {sectionPadding}; padding-bottom: {sectionPaddingBottom};"
 		>
 			<h2>Style<span class="required-star">*</span></h2>
 			<p id="choose">
@@ -478,51 +231,29 @@
 				pasting in cover letters or writing samples.
 			</p>
 			<div class="toggle-button">
-				{#each [1, 0] as index}
+				{#each [{ index: 0, label: "Pre-Selected Style" }, { index: 1, label: "Personalized Style" }] as { index, label }}
 					<button
 						on:click={() => {
 							if ($isSample !== index) isSample.set(index);
 						}}
-						style={`color: ${
-							$isSample === index ? "#004896" : "#848484"
-						}; border-color: ${
-							$isSample === index ? "#004896" : "#848484"
-						}; background-color: ${
-							$isSample === index ? "#DCEDFF" : "white"
-						}; font-weight: ${$isSample === index ? "bold" : "normal"}`}
+						class:active={$isSample === index}
 					>
-						{index === 0 ? "Pre-Selected Style" : "Personalized Style"}
+						{label}
 					</button>
 				{/each}
 			</div>
 			{#if $isSample}
 				<div class="double">
 					<div class="custom-style">
-						<div class="file-upload">
-							<button
-								on:click={() => document.getElementById("getFile1").click()}
-							>
-								<div class="logo-container">
-									<img src="/upload-icon.png" alt="Upload Icon" />
-								</div>
-								<div class="text-container" id="upload-1">
-									Upload Sample #1 PDF
-								</div>
-							</button>
-							<div class="uploaded">
-								{writingSamplesData[writingSample1Id] &&
-								writingSamplesData[writingSample1Id].fileName !==
-									"Pasted Sample"
-									? writingSamplesData[writingSample1Id].fileName
-									: ""}
-							</div>
-							<input
-								type="file"
-								id="getFile1"
-								style="display:none"
-								on:change={(e) => handleFileChange(e, "writingSample1")}
-							/>
-						</div>
+						<FileUpload
+							id="getFile1"
+							label="Upload Sample #1 PDF"
+							uploadedFileName={!isPastedSample(writingSample1Id) &&
+							writingSamplesData[writingSample1Id]
+								? writingSamplesData[writingSample1Id].fileName
+								: ""}
+							onFileChange={(e) => handleFileChange(e, "writingSample1")}
+						/>
 						<p class="style-or">or</p>
 						<textarea
 							placeholder="Paste your first writing sample here"
@@ -533,30 +264,15 @@
 					</div>
 
 					<div class="custom-style">
-						<div class="file-upload">
-							<button
-								on:click={() => document.getElementById("getFile2").click()}
-							>
-								<div class="logo-container">
-									<img src="/upload-icon.png" alt="Upload Icon" />
-								</div>
-								<div class="text-container">Upload Sample #2 (Optional)</div>
-							</button>
-							<div class="uploaded">
-								{writingSamplesData[writingSample2Id] &&
-								writingSamplesData[writingSample2Id].fileName !==
-									"Pasted Sample"
-									? writingSamplesData[writingSample2Id].fileName
-									: ""}
-							</div>
-
-							<input
-								type="file"
-								id="getFile2"
-								style="display:none"
-								on:change={(e) => handleFileChange(e, "writingSample2")}
-							/>
-						</div>
+						<FileUpload
+							id="getFile2"
+							label="Upload Sample #2 (Optional)"
+							uploadedFileName={!isPastedSample(writingSample2Id) &&
+							writingSamplesData[writingSample2Id]
+								? writingSamplesData[writingSample2Id].fileName
+								: ""}
+							onFileChange={(e) => handleFileChange(e, "writingSample2")}
+						/>
 						<p class="style-or">or</p>
 						<textarea
 							placeholder="Paste your second writing sample here (Optional)"
@@ -574,11 +290,9 @@
 								<input
 									type="radio"
 									name="style"
-									value="precise"
-									checked={style === "precise"}
-									on:click={() => {
-										style = "precise";
-									}}
+									value={STYLES.PRECISE}
+									checked={style === STYLES.PRECISE}
+									on:click={() => (style = STYLES.PRECISE)}
 								/>
 								Precise and Qualification-Driven
 							</label>
@@ -590,7 +304,7 @@
 
 		<div class="section">
 			<h2>Resume<span class="required-star">*</span></h2>
-			{#if uploadedResumes.includes(selectedResume)}
+			{#if hasSelectedResume}
 				<select bind:value={selectedResume}>
 					{#each uploadedResumes as resumeKey (resumeKey)}
 						<option value={resumeKey}>
@@ -608,35 +322,20 @@
 				</button>
 				<p class="style-or">or</p>
 			{/if}
-			<div
-				class="file-upload"
-				id="resume-upload"
-				style="display: flex; align-items: center;"
-			>
-				<button
-					on:click={() => document.getElementById("resumeUpload").click()}
-				>
-					<div class="logo-container">
-						<img src="/upload-icon.png" alt="Upload Icon" />
-					</div>
-					<div class="text-container">Upload New PDF</div>
-				</button>
-				<input
-					type="file"
+			<div id="resume-upload">
+				<FileUpload
 					id="resumeUpload"
-					style="display:none"
-					on:change={(e) => handleFileChange(e, "resume")}
+					label="Upload New PDF"
+					onFileChange={(e) => handleFileChange(e, "resume")}
 				/>
 			</div>
 		</div>
 
 		<div
 			class="section"
-			style="padding-top: {uploadedResumes[selectedResume]
+			style="padding-top: {hasSelectedResume
 				? '0rem'
-				: '0.5rem'}; padding-bottom: {uploadedResumes[selectedResume]
-				? '1rem'
-				: '1.1rem'};"
+				: '0.5rem'}; padding-bottom: {sectionPaddingBottom};"
 		>
 			<h2>Job Description<span class="required-star">*</span></h2>
 			<textarea
@@ -648,11 +347,9 @@
 		<div
 			class="section"
 			id="additional"
-			style="padding-top: {uploadedResumes[selectedResume]
+			style="padding-top: {hasSelectedResume
 				? '0rem'
-				: '0.5rem'}; padding-bottom: {uploadedResumes[selectedResume]
-				? '1rem'
-				: '1.1rem'};"
+				: '0.5rem'}; padding-bottom: {sectionPaddingBottom};"
 		>
 			<h2>Additional Notes (Optional)</h2>
 			<p id="additional-label">
@@ -667,9 +364,10 @@
 		<button
 			class="generate-button"
 			on:click|stopPropagation={handleSubmit}
-			style="margin-top: {uploadedResumes[selectedResume] ? '0rem' : '1rem'};"
-			>Generate Letter</button
+			style="margin-top: {hasSelectedResume ? '0rem' : '1rem'};"
 		>
+			Generate Letter
+		</button>
 	</div>
 </div>
 
@@ -716,13 +414,16 @@
 		border-radius: 5px;
 	}
 	.toggle-button button {
-		border: solid 1px;
+		border: solid 1px #848484;
 		padding: 0.2rem 1em;
 		border-radius: 0;
 		font-size: 0.9rem;
 		margin-top: 1rem;
 		margin-bottom: 0.5rem;
 		cursor: pointer;
+		color: #848484;
+		background-color: white;
+		font-weight: normal;
 	}
 	.toggle-button button:first-child {
 		border-top-left-radius: 1rem;
@@ -732,6 +433,12 @@
 		border-top-right-radius: 1rem;
 		border-bottom-right-radius: 1rem;
 	}
+	.toggle-button button.active {
+		color: #004896;
+		border-color: #004896;
+		background-color: #dcedff;
+		font-weight: bold;
+	}
 	.toggle-button {
 		display: flex;
 	}
@@ -739,7 +446,6 @@
 		margin-top: 1rem;
 	}
 
-	.custom-style input[type="file"],
 	.custom-style textarea,
 	.base-style ul {
 		margin-top: 0em;
@@ -802,34 +508,6 @@
 		height: 2rem;
 	}
 
-	.file-upload button {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		width: 12.5rem;
-		height: 1.6rem;
-		font-size: 0.75rem;
-		border-radius: 0;
-		border: none;
-		cursor: pointer;
-		background-color: #d9d9d9;
-	}
-
-	.file-upload button img {
-		width: 1.2rem; /* Adjust this size according to the logo size you want */
-	}
-
-	.file-upload button .logo-container {
-		padding: 0rem;
-		margin-right: 0rem;
-		margin-left: 0;
-		padding-left: 0.2rem;
-	}
-
-	.file-upload button .text-container {
-		padding-right: 0rem;
-	}
-
 	#choose {
 		padding: 0;
 		margin: 0;
@@ -841,15 +519,11 @@
 		margin-right: 12rem;
 	}
 
-	#upload-1 {
-		padding-right: 2.3rem;
+	#resume-upload {
+		display: flex;
+		align-items: center;
 	}
-
-	#style-sect {
-		padding-top: 1rem;
-	}
-
-	#resume-upload button {
+	#resume-upload :global(.file-upload button) {
 		width: 7rem;
 		padding-top: 0rem;
 		padding-bottom: 0rem;
@@ -875,11 +549,6 @@
 
 	.cursor {
 		cursor: pointer;
-	}
-
-	.uploaded {
-		font-size: 0.65rem;
-		padding-top: 0.2rem;
 	}
 
 	#loading-resume {

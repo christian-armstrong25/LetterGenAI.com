@@ -1,3 +1,4 @@
-import pdfWorkerCode from "pdfjs-dist/build/pdf.worker.js?raw";
-const blob = new Blob([pdfWorkerCode], { type: "application/javascript" });
-export const pdfWorkerUrl = URL.createObjectURL(blob);
+// Import the worker file using Vite's ?url import
+import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+
+export const pdfWorkerUrl = workerUrl;
